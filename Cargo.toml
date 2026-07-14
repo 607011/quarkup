@@ -7,3 +7,4 @@ edition = "2024"
 mathjax-svg-rs = "0.4.0"
 base64 = "0.22.0"
 syntect = "5.2.0"
+clap = { version = "4.4", features = ["derive"] }
