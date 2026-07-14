@@ -1,15 +1,15 @@
-mod lexer;
 mod ast;
-mod parser;
 mod html;
+mod lexer;
+mod parser;
 
-use std::fs;
-use std::io::{self, Read};
-use std::collections::HashMap;
 use clap::Parser as ClapParser;
+use html::HtmlRenderer;
 use lexer::Lexer;
 use parser::Parser;
-use html::HtmlRenderer;
+use std::collections::HashMap;
+use std::fs;
+use std::io::{self, Read};
 
 #[derive(ClapParser, Debug)]
 #[command(
@@ -43,11 +43,7 @@ struct Args {
     )]
     monolithic: bool,
 
-    #[arg(
-        short,
-        long,
-        help = "Print verbose compilation phase logs to stderr"
-    )]
+    #[arg(short, long, help = "Print verbose compilation phase logs to stderr")]
     verbose: bool,
 
     #[arg(
@@ -92,7 +88,10 @@ fn main() -> io::Result<()> {
     let mut custom_template = None;
     if let Some(ref template_path) = args.template {
         if args.verbose {
-            eprintln!("[Info] Reading custom HTML template from: {}", template_path);
+            eprintln!(
+                "[Info] Reading custom HTML template from: {}",
+                template_path
+            );
         }
         match fs::read_to_string(template_path) {
             Ok(content) => {
@@ -124,10 +123,13 @@ fn main() -> io::Result<()> {
     let ast = parser.parse();
 
     if args.verbose {
-        eprintln!("[Info] AST generation complete. Blocks found: {}", ast.blocks.len());
+        eprintln!(
+            "[Info] AST generation complete. Blocks found: {}",
+            ast.blocks.len()
+        );
         eprintln!("[Info] Rendering AST to HTML...");
     }
-    
+
     let renderer = HtmlRenderer::new(custom_template, args.monolithic);
     let html_output = renderer.render(&ast);
 

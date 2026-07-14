@@ -45,6 +45,7 @@ pub enum Token<'a> {
 pub struct Lexer<'a> {
     source: &'a str,
     chars: Peekable<CharIndices<'a>>,
+    at_line_start: bool,
 }
 
 impl<'a> Lexer<'a> {
@@ -52,6 +53,7 @@ impl<'a> Lexer<'a> {
         Self {
             source,
             chars: source.char_indices().peekable(),
+            at_line_start: true,
         }
     }
 
@@ -62,13 +64,17 @@ impl<'a> Lexer<'a> {
             .unwrap_or(self.source.len())
     }
 
-    fn bump(&mut self) {
-        self.chars.next();
+    fn bump(&mut self) -> Option<(usize, char)> {
+        self.chars.next()
     }
 
     fn skip_comment_line(&mut self) -> bool {
+        if !self.at_line_start {
+            return false; // don't skip comments in the middle of a line
+        }
+
         let mut temp_chars = self.chars.clone();
-        // Skip leading whitespace temporarily to check the start of the line
+
         while let Some((_, c)) = temp_chars.peek() {
             if *c == ' ' || *c == '\t' {
                 temp_chars.next();
@@ -76,16 +82,14 @@ impl<'a> Lexer<'a> {
                 break;
             }
         }
-        // Check if a comment prefix follows
+
         if let Some((_, first_c)) = temp_chars.next() {
             if first_c == '#' {
-                // Single hash is a comment: consume until the end of the line in the real iterator
                 self.consume_until_newline();
                 return true;
             } else if first_c == '/' {
                 if let Some((_, second_c)) = temp_chars.next() {
                     if second_c == '/' {
-                        // Double slash is a comment: consume until the end of the line in the real iterator
                         self.consume_until_newline();
                         return true;
                     }
@@ -122,9 +126,19 @@ impl<'a> Iterator for Lexer<'a> {
                     self.bump();
                 }
             }
+            self.at_line_start = true;
         }
 
-        let (start_idx, c) = self.bump()?;
+        let (start_idx, c) = match self.bump() {
+            Some(pair) => pair,
+            None => return None,
+        };
+
+        if c == '\n' || c == '\r' {
+            self.at_line_start = true;
+        } else {
+            self.at_line_start = false;
+        }
 
         match c {
             '\n' => Some(Token::LineBreak),
