@@ -5,6 +5,7 @@ mod html;
 
 use std::fs;
 use std::io::{self, Read};
+use std::collections::HashMap;
 use clap::Parser as ClapParser;
 use lexer::Lexer;
 use parser::Parser;
@@ -13,10 +14,10 @@ use html::HtmlRenderer;
 #[derive(ClapParser, Debug)]
 #[command(
     name = "quarkup",
-    author = "Oliver Lau",
-    version = "1.0",
+    author = "Oliver",
+    version = "1.1",
     about = "A subatomic document compiler that translates Quarkup markup into HTML",
-    long_about = "Quarkup is a lightweight, highly efficient document compiler written in Rust. It processes input from stdin and renders standalone, beautifully styled HTML documents."
+    long_about = "Quarkup is a lightweight, highly efficient document compiler written in Rust."
 )]
 struct Args {
     #[arg(
@@ -48,17 +49,38 @@ struct Args {
         help = "Print verbose compilation phase logs to stderr"
     )]
     verbose: bool,
+
+    #[arg(
+        short,
+        long = "define",
+        value_name = "KEY=VALUE",
+        help = "Define a variable for conditional rendering (e.g., -d target=web or -d draft=true)"
+    )]
+    defines: Vec<String>,
 }
 
 fn main() -> io::Result<()> {
-    // Parse command line arguments using clap.
-    // This automatically handles -h, --help, -? and invalid arguments.
     let args = Args::parse();
+
+    // Map the incoming defines into a HashMap
+    let mut defines_map = HashMap::new();
+    for define in &args.defines {
+        if let Some(pos) = define.find('=') {
+            let (key, value) = define.split_at(pos);
+            defines_map.insert(key.trim().to_string(), value[1..].trim().to_string());
+        } else {
+            // If no '=' is specified, treat it as a true flag
+            defines_map.insert(define.trim().to_string(), "true".to_string());
+        }
+    }
 
     if args.verbose {
         eprintln!("[Info] Starting Quarkup compiler...");
         if args.monolithic {
             eprintln!("[Info] Monolithic mode active: local images will be embedded as Base64.");
+        }
+        if !defines_map.is_empty() {
+            eprintln!("[Info] Active CLI definitions: {:?}", defines_map);
         }
         if let Some(ref path) = args.output {
             eprintln!("[Info] Output will be written to: {}", path);
@@ -67,7 +89,6 @@ fn main() -> io::Result<()> {
         }
     }
 
-    // Load custom template if specified
     let mut custom_template = None;
     if let Some(ref template_path) = args.template {
         if args.verbose {
@@ -88,7 +109,6 @@ fn main() -> io::Result<()> {
         eprintln!("[Info] Reading source document from stdin...");
     }
 
-    // Read the .qu source code from stdin
     let mut input = String::new();
     io::stdin().read_to_string(&mut input)?;
 
@@ -100,7 +120,7 @@ fn main() -> io::Result<()> {
     if args.verbose {
         eprintln!("[Info] Parsing tokens into Abstract Syntax Tree (AST)...");
     }
-    let parser = Parser::new(lexer);
+    let parser = Parser::new(lexer, defines_map);
     let ast = parser.parse();
 
     if args.verbose {
@@ -111,7 +131,6 @@ fn main() -> io::Result<()> {
     let renderer = HtmlRenderer::new(custom_template, args.monolithic);
     let html_output = renderer.render(&ast);
 
-    // Handle output target
     if let Some(ref path) = args.output {
         if args.verbose {
             eprintln!("[Info] Writing rendered HTML to file: {}", path);

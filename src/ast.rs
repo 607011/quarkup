@@ -8,6 +8,10 @@ pub enum InlineNode {
         content: Vec<InlineNode>,
     },
     InlineMath(String),
+    Link {
+        url: String,
+        text: Vec<InlineNode>,
+    },
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -65,6 +69,7 @@ pub enum BlockNode {
         items: Vec<ListItem>,
     },
     Lattice(Vec<LatticeRow>),
+    Conditional(Vec<BlockNode>), // Dynamic wrapper for active branches
 }
 
 #[derive(Debug, PartialEq, Clone)]

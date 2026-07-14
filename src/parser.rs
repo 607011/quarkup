@@ -1,15 +1,21 @@
 use crate::ast::{BlockNode, Document, InlineNode, LatticeCell, LatticeRow, ListItem, RowType};
 use crate::lexer::{Flavor, Lexer, Token};
+use std::collections::HashMap;
 
 pub struct Parser<'a> {
     lexer: Lexer<'a>,
     lookahead: Option<Token<'a>>,
+    defines: HashMap<String, String>,
 }
 
 impl<'a> Parser<'a> {
-    pub fn new(mut lexer: Lexer<'a>) -> Self {
+    pub fn new(mut lexer: Lexer<'a>, defines: HashMap<String, String>) -> Self {
         let lookahead = lexer.next();
-        Self { lexer, lookahead }
+        Self {
+            lexer,
+            lookahead,
+            defines,
+        }
     }
 
     fn consume(&mut self) -> Option<Token<'a>> {
@@ -72,9 +78,17 @@ impl<'a> Parser<'a> {
                     Flavor::Top => {
                         let raw_line = self.collect_raw_line_content();
                         let mut parts = raw_line.split_whitespace();
-                        let key = parts.next()?.to_string();
-                        let value = parts.collect::<Vec<&str>>().join(" ");
-                        Some(BlockNode::Metadata { key, value })
+                        if let Some(key) = parts.next() {
+                            let value = parts.collect::<Vec<&str>>().join(" ");
+                            // Register metadata dynamically inside the parser environment
+                            self.defines.insert(key.to_string(), value.clone());
+                            Some(BlockNode::Metadata {
+                                key: key.to_string(),
+                                value,
+                            })
+                        } else {
+                            None
+                        }
                     }
                     Flavor::Graphic => {
                         let raw_line = self.collect_raw_line_content();
@@ -88,7 +102,7 @@ impl<'a> Parser<'a> {
                         Some(BlockNode::Image { path, caption })
                     }
                     Flavor::Lattice if count == 1 => {
-                        self.collect_raw_line_content(); // Consume residual line-break or spaces after .l
+                        self.collect_raw_line_content();
                         let mut rows = Vec::new();
 
                         while let Some(tok) = self.peek() {
@@ -111,15 +125,12 @@ impl<'a> Parser<'a> {
                         let mut lines = Vec::new();
 
                         while self.peek().is_some() {
-                            // We inspect the raw line first to check for escapings or block termination
                             let next_line = self.collect_raw_line_content();
                             let trimmed = next_line.trim();
 
                             if trimmed == ".." || trimmed.starts_with("..") {
-                                // Plain annihilator found: terminate the block
                                 break;
                             } else if trimmed == "\\.." || trimmed.starts_with("\\..") {
-                                // Escaped annihilator: remove the backslash and keep the dots
                                 let unescaped = next_line.replacen("\\..", "..", 1);
                                 lines.push(unescaped);
                             } else {
@@ -139,6 +150,51 @@ impl<'a> Parser<'a> {
                                 language,
                                 code: lines.join("\n"),
                             })
+                        }
+                    }
+                    Flavor::Bottom if count == 1 => {
+                        let raw_line = self.collect_raw_line_content();
+
+                        if self.evaluate_condition(&raw_line) {
+                            let mut inner_blocks = Vec::new();
+                            while let Some(tok) = self.peek() {
+                                if let Token::Annihilator = tok {
+                                    self.consume();
+                                    break;
+                                }
+                                if let Some(block) = self.parse_block() {
+                                    inner_blocks.push(block);
+                                }
+                            }
+                            Some(BlockNode::Conditional(inner_blocks))
+                        } else {
+                            // Safe skipping algorithm protecting nested block structures
+                            let mut depth = 1;
+                            while depth > 0 {
+                                if let Some(tok) = self.peek() {
+                                    match tok {
+                                        Token::Annihilator => {
+                                            self.consume();
+                                            depth -= 1;
+                                        }
+                                        Token::Quark { flavor, count }
+                                            if *count == 1
+                                                && (*flavor == Flavor::Lattice
+                                                    || *flavor == Flavor::Strange
+                                                    || *flavor == Flavor::Bottom) =>
+                                        {
+                                            self.collect_raw_line_content();
+                                            depth += 1;
+                                        }
+                                        _ => {
+                                            self.collect_raw_line_content();
+                                        }
+                                    }
+                                } else {
+                                    break;
+                                }
+                            }
+                            None
                         }
                     }
                     _ => {
@@ -187,7 +243,7 @@ impl<'a> Parser<'a> {
             let is_rowspan_marker = cell_trimmed == "_";
 
             let cell_lexer = Lexer::new(raw_cell);
-            let mut cell_parser = Parser::new(cell_lexer);
+            let mut cell_parser = Parser::new(cell_lexer, HashMap::new());
             let content = cell_parser.parse_inline_until_line_end();
 
             cells.push(LatticeCell {
@@ -322,6 +378,67 @@ impl<'a> Parser<'a> {
                                 content: inner,
                             });
                         }
+                    } else if flavor == Flavor::Bottom {
+                        // 1. Wir parsen den gesamten Inhalt bis zum passenden schließenden Annihilator `..`
+                        let inner = self.parse_inline_until_annihilator();
+                        let raw_text = self.nodes_to_string(&inner);
+
+                        if let Some(pos) = raw_text.find('|') {
+                            let (cond, _) = raw_text.split_at(pos);
+
+                            if self.evaluate_condition(cond) {
+                                // Wenn die Bedingung WAHR ist, filtern wir die Bedingung ("target=web|") aus
+                                // den bereits geparsten inneren Nodes heraus und fügen sie dem AST hinzu.
+                                let mut condition_prefix_len = cond.len() + 1; // Bedingung + '|'
+
+                                for node in inner {
+                                    match node {
+                                        InlineNode::Text(mut t) => {
+                                            if condition_prefix_len > 0 {
+                                                if t.len() >= condition_prefix_len {
+                                                    t.drain(0..condition_prefix_len);
+                                                    condition_prefix_len = 0;
+                                                    if !t.is_empty() {
+                                                        nodes.push(InlineNode::Text(t));
+                                                    }
+                                                } else {
+                                                    condition_prefix_len -= t.len();
+                                                }
+                                            } else {
+                                                nodes.push(InlineNode::Text(t));
+                                            }
+                                        }
+                                        _ => {
+                                            // Komplexe Nodes (wie unser InlineNode::Link!) übernehmen wir unbeschadet!
+                                            if condition_prefix_len == 0 {
+                                                nodes.push(node);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    } else if flavor == Flavor::Lattice {
+                        let inner = self.parse_inline_until_annihilator();
+                        let raw_text = self.nodes_to_string(&inner);
+                        if let Some(pos) = raw_text.find('|') {
+                            let (url, text_part) = raw_text.split_at(pos);
+                            let text_content = &text_part[1..]; // Überspringe das '|'
+
+                            let mut sub_parser =
+                                Parser::new(Lexer::new(text_content), self.defines.clone());
+                            let parsed_text = sub_parser.parse_inline_until_line_end();
+
+                            nodes.push(InlineNode::Link {
+                                url: url.trim().to_string(),
+                                text: parsed_text,
+                            });
+                        } else {
+                            nodes.push(InlineNode::Link {
+                                url: raw_text.trim().to_string(),
+                                text: vec![InlineNode::Text(raw_text)],
+                            });
+                        }
                     } else {
                         let content = self.parse_inline_until_annihilator();
                         nodes.push(InlineNode::Formatted { flavor, content });
@@ -370,6 +487,67 @@ impl<'a> Parser<'a> {
                                 content: inner,
                             });
                         }
+                    } else if flavor == Flavor::Bottom {
+                        // 1. Wir parsen den gesamten Inhalt bis zum passenden schließenden Annihilator `..`
+                        let inner = self.parse_inline_until_annihilator();
+                        let raw_text = self.nodes_to_string(&inner);
+
+                        if let Some(pos) = raw_text.find('|') {
+                            let (cond, _) = raw_text.split_at(pos);
+
+                            if self.evaluate_condition(cond) {
+                                // Wenn die Bedingung WAHR ist, filtern wir die Bedingung ("target=web|") aus
+                                // den bereits geparsten inneren Nodes heraus und fügen sie dem AST hinzu.
+                                let mut condition_prefix_len = cond.len() + 1; // Bedingung + '|'
+
+                                for node in inner {
+                                    match node {
+                                        InlineNode::Text(mut t) => {
+                                            if condition_prefix_len > 0 {
+                                                if t.len() >= condition_prefix_len {
+                                                    t.drain(0..condition_prefix_len);
+                                                    condition_prefix_len = 0;
+                                                    if !t.is_empty() {
+                                                        nodes.push(InlineNode::Text(t));
+                                                    }
+                                                } else {
+                                                    condition_prefix_len -= t.len();
+                                                }
+                                            } else {
+                                                nodes.push(InlineNode::Text(t));
+                                            }
+                                        }
+                                        _ => {
+                                            // Komplexe Nodes (wie unser InlineNode::Link!) übernehmen wir unbeschadet!
+                                            if condition_prefix_len == 0 {
+                                                nodes.push(node);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    } else if flavor == Flavor::Lattice {
+                        let inner = self.parse_inline_until_annihilator();
+                        let raw_text = self.nodes_to_string(&inner);
+                        if let Some(pos) = raw_text.find('|') {
+                            let (url, text_part) = raw_text.split_at(pos);
+                            let text_content = &text_part[1..]; // Überspringe das '|'
+
+                            let mut sub_parser =
+                                Parser::new(Lexer::new(text_content), self.defines.clone());
+                            let parsed_text = sub_parser.parse_inline_until_line_end();
+
+                            nodes.push(InlineNode::Link {
+                                url: url.trim().to_string(),
+                                text: parsed_text,
+                            });
+                        } else {
+                            nodes.push(InlineNode::Link {
+                                url: raw_text.trim().to_string(),
+                                text: vec![InlineNode::Text(raw_text)],
+                            });
+                        }
                     } else {
                         let content = self.parse_inline_until_annihilator();
                         nodes.push(InlineNode::Formatted { flavor, content });
@@ -391,8 +569,46 @@ impl<'a> Parser<'a> {
                     s.push_str("math ");
                     s.push_str(m);
                 }
+                InlineNode::Link { text, .. } => {
+                    s.push_str(&self.nodes_to_string(text));
+                }
             }
         }
         s
+    }
+
+    // Helper to evaluate a condition string against active definitions (supports '=' and whitespace)
+    fn evaluate_condition(&self, cond: &str) -> bool {
+        let trimmed_cond = cond.trim();
+        let is_negated = trimmed_cond.starts_with('!');
+        let core = if is_negated {
+            trimmed_cond[1..].trim()
+        } else {
+            trimmed_cond
+        };
+
+        // Parse key and expected value, supporting both 'key=value' and 'key value'
+        let (key, expected_value) = if let Some(pos) = core.find('=') {
+            let (k, v) = core.split_at(pos);
+            (k.trim(), Some(v[1..].trim()))
+        } else {
+            let mut parts = core.split_whitespace();
+            let k = parts.next().unwrap_or("");
+            let v = parts.next();
+            (k, v)
+        };
+
+        let actual_value = self.defines.get(key);
+        let mut matches = match expected_value {
+            Some(val) => actual_value.map(|v| v == val).unwrap_or(false),
+            None => actual_value
+                .map(|v| v != "false" && !v.is_empty())
+                .unwrap_or(false),
+        };
+
+        if is_negated {
+            matches = !matches;
+        }
+        matches
     }
 }

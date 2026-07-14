@@ -213,6 +213,14 @@ impl HtmlRenderer {
             BlockNode::List { ordered, items } => self.render_list(*ordered, items),
             BlockNode::Lattice(rows) => self.render_lattice(rows),
             BlockNode::Metadata { .. } => String::new(),
+            BlockNode::Conditional(blocks) => {
+                let mut output = String::new();
+                for inner_block in blocks {
+                    output.push_str(&self.render_block(inner_block));
+                    output.push('\n');
+                }
+                output
+            }
         }
     }
 
@@ -396,6 +404,10 @@ impl HtmlRenderer {
                     "<span class=\"quarkup-math-inline\" style=\"display: inline-block; vertical-align: -0.15em;\">{}</span>",
                     svg
                 )
+            }
+            InlineNode::Link { url, text } => {
+                let rendered_text = self.render_inline_list(text);
+                format!("<a href=\"{}\">{}</a>", url, rendered_text)
             }
             InlineNode::Formatted { flavor, content } => {
                 let rendered_content = self.render_inline_list(content);
