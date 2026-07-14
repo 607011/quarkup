@@ -1,0 +1,53 @@
+.t title The Subatomic Manifesto
+.t author Oliver
+.t lang en
+
+.u The World of Quarks
+Welcome to document physics. Quarkup is so tiny, it is almost invisible.
+
+.uu Mathematical and Chemical States
+In Quarkup, the gravity of the text is incredibly easy to control.
+A well-known molecule is H.d 2..O, while in mathematics we love to calculate with a.u 2.. + b.u 2.. = c.u 2...
+
+We can also easily .c emphasize text energetically.. or declare it as .s inline_code...
+
+Furthermore, we can harness the power of inline math. The energy is defined by .s math E = mc^2.. or the wave function .s math \psi(x, t) = A e^{i(kx - \omega t)}.. drifting directly within the flow of our text.
+
+And here is a dedicated block-level math field for complex field equations to expand freely in space:
+
+.s math
+\int_{-\infty}^{\infty} e^{-x^2} dx = \sqrt{\pi}
+..
+
+.uu Lists and Alignments (Leptons)
+Here are the three most fundamental pillars of Quarkup:
+
+.n Minimalism through point-like singularities
+.n Full performance powered by our Rust parser
+.nn Zero heap allocations during lexing
+.nn Guaranteed zero-copy operations
+.n Supreme aesthetics
+
+And the installation process is wonderfully simple:
+
+.e Clone the repository
+.e Create your test.qu file
+.e Feed the compiler via stdin
+
+.uu Visualization (Conservation of Energy)
+We can load our high-resolution terrace image without any cluttered brackets:
+
+.g example/terrace.jpg A magnificent view of the garden at sunset
+
+.uu A Real Code Listing
+Here is a multi-line block that runs completely isolated from the rest of our parser, beautifully highlighted by the compiler:
+
+.s rust
+fn main() {
+    // English comment: Inside this block, absolutely nothing is falsely parsed!
+    let water = "H.d 2..O";
+    println!("Formula: {}", water);
+}
+..
+
+This concludes our quick mathematical and physical tour of the Quarkup universe.
