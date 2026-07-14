@@ -150,3 +150,7 @@ fn hello() {
 ## 🪐 Join the Subatomic Universe
 
 Quarkup is currently in its pre-alpha orbital state. Contributions to the parser or link-refinement mechanics are highly welcome!
+
+## License
+
+[MIT](LICENSE)
