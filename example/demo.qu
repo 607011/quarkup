@@ -87,4 +87,7 @@ f: Gesamtmasse des Systems    ;   >   ;   >   ; ~ 7.5 MeV
 
 This concludes our quick mathematical and physical tour of the Quarkup universe.
 
-Please click .b target=web|.l https://quarkup.org|here.. .. .b !target=web|on the dynamic link on our homepage.. to download.
+
+# this is a comment 
+// this is also a comment
+Please click .b target=web|.l https://quarkup.org|here.. .. .b !target=web|on the dynamic link on our homepage.. to download the latest release. // this is .c NOT.. a comment

@@ -65,13 +65,66 @@ impl<'a> Lexer<'a> {
     fn bump(&mut self) {
         self.chars.next();
     }
+
+    fn skip_comment_line(&mut self) -> bool {
+        let mut temp_chars = self.chars.clone();
+        // Skip leading whitespace temporarily to check the start of the line
+        while let Some((_, c)) = temp_chars.peek() {
+            if *c == ' ' || *c == '\t' {
+                temp_chars.next();
+            } else {
+                break;
+            }
+        }
+        // Check if a comment prefix follows
+        if let Some((_, first_c)) = temp_chars.next() {
+            if first_c == '#' {
+                // Single hash is a comment: consume until the end of the line in the real iterator
+                self.consume_until_newline();
+                return true;
+            } else if first_c == '/' {
+                if let Some((_, second_c)) = temp_chars.next() {
+                    if second_c == '/' {
+                        // Double slash is a comment: consume until the end of the line in the real iterator
+                        self.consume_until_newline();
+                        return true;
+                    }
+                }
+            }
+        }
+        false
+    }
+
+    fn consume_until_newline(&mut self) {
+        while let Some((_, c)) = self.chars.peek() {
+            if *c == '\n' || *c == '\r' {
+                break;
+            }
+            self.bump();
+        }
+    }
 }
 
 impl<'a> Iterator for Lexer<'a> {
     type Item = Token<'a>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let (start_idx, c) = self.chars.next()?;
+        // Before each token cut, check if the current line is a comment
+        // If so, skip it and continue directly
+        while self.skip_comment_line() {
+            // After skipping the comment, we are directly before the line break.
+            // If a line break follows, consume it to start fresh with the next line.
+            if let Some(&(_, '\n')) = self.chars.peek() {
+                self.bump();
+            } else if let Some(&(_, '\r')) = self.chars.peek() {
+                self.bump();
+                if let Some(&(_, '\n')) = self.chars.peek() {
+                    self.bump();
+                }
+            }
+        }
+
+        let (start_idx, c) = self.bump()?;
 
         match c {
             '\n' => Some(Token::LineBreak),

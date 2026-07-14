@@ -387,9 +387,9 @@ impl<'a> Parser<'a> {
                             let (cond, _) = raw_text.split_at(pos);
 
                             if self.evaluate_condition(cond) {
-                                // Wenn die Bedingung WAHR ist, filtern wir die Bedingung ("target=web|") aus
-                                // den bereits geparsten inneren Nodes heraus und fügen sie dem AST hinzu.
-                                let mut condition_prefix_len = cond.len() + 1; // Bedingung + '|'
+                                // If the condition is TRUE, we filter out the condition ("target=web|")
+                                // from the already parsed inner nodes and add them to the AST.
+                                let mut condition_prefix_len = cond.len() + 1; // Condition + '|'
 
                                 for node in inner {
                                     match node {
@@ -409,7 +409,7 @@ impl<'a> Parser<'a> {
                                             }
                                         }
                                         _ => {
-                                            // Komplexe Nodes (wie unser InlineNode::Link!) übernehmen wir unbeschadet!
+                                            // Complex nodes (like our InlineNode::Link!) are preserved as-is!
                                             if condition_prefix_len == 0 {
                                                 nodes.push(node);
                                             }
@@ -423,7 +423,7 @@ impl<'a> Parser<'a> {
                         let raw_text = self.nodes_to_string(&inner);
                         if let Some(pos) = raw_text.find('|') {
                             let (url, text_part) = raw_text.split_at(pos);
-                            let text_content = &text_part[1..]; // Überspringe das '|'
+                            let text_content = &text_part[1..]; // skip '|'
 
                             let mut sub_parser =
                                 Parser::new(Lexer::new(text_content), self.defines.clone());
@@ -488,17 +488,13 @@ impl<'a> Parser<'a> {
                             });
                         }
                     } else if flavor == Flavor::Bottom {
-                        // 1. Wir parsen den gesamten Inhalt bis zum passenden schließenden Annihilator `..`
                         let inner = self.parse_inline_until_annihilator();
                         let raw_text = self.nodes_to_string(&inner);
 
                         if let Some(pos) = raw_text.find('|') {
                             let (cond, _) = raw_text.split_at(pos);
-
                             if self.evaluate_condition(cond) {
-                                // Wenn die Bedingung WAHR ist, filtern wir die Bedingung ("target=web|") aus
-                                // den bereits geparsten inneren Nodes heraus und fügen sie dem AST hinzu.
-                                let mut condition_prefix_len = cond.len() + 1; // Bedingung + '|'
+                                let mut condition_prefix_len = cond.len() + 1; // condition + '|'
 
                                 for node in inner {
                                     match node {
@@ -518,7 +514,6 @@ impl<'a> Parser<'a> {
                                             }
                                         }
                                         _ => {
-                                            // Komplexe Nodes (wie unser InlineNode::Link!) übernehmen wir unbeschadet!
                                             if condition_prefix_len == 0 {
                                                 nodes.push(node);
                                             }
@@ -532,7 +527,7 @@ impl<'a> Parser<'a> {
                         let raw_text = self.nodes_to_string(&inner);
                         if let Some(pos) = raw_text.find('|') {
                             let (url, text_part) = raw_text.split_at(pos);
-                            let text_content = &text_part[1..]; // Überspringe das '|'
+                            let text_content = &text_part[1..]; // skip '|'
 
                             let mut sub_parser =
                                 Parser::new(Lexer::new(text_content), self.defines.clone());
