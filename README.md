@@ -145,6 +145,13 @@ fn hello() {
 }</pre>
 ```
 
+#### Result in browser
+
+This is how the [sample document](example/demo.qu) looks like in a web browser:
+
+<img width="3620" height="5878" alt="grafik" src="https://github.com/user-attachments/assets/7f9d5ffb-d04c-40e9-a203-165154a12a4b" />
+
+
 ---
 
 ## 🪐 Join the Subatomic Universe
