@@ -1,22 +1,23 @@
-use crate::ast::{BlockNode, Document, InlineNode, ListItem};
+use crate::ast::{BlockNode, Document, InlineNode, LatticeRow, ListItem, RowType};
 use crate::lexer::Flavor;
+use base64::prelude::*;
 use std::fs;
 use std::path::Path;
-use base64::prelude::*;
 
-// English comment: Import syntect modules for robust syntax highlighting
 use syntect::easy::HighlightLines;
 use syntect::highlighting::{Theme, ThemeSet};
 use syntect::html::styled_line_to_highlighted_html;
 use syntect::parsing::SyntaxSet;
 
-// English comment: The default standalone HTML5 boilerplate template
 const DEFAULT_TEMPLATE: &str = r#"<!DOCTYPE html>
 <html lang="{{lang}}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="author" content="{{author}}">
+    <meta name="description" content="{{description}}">
+    <meta name="keywords" content="{{keywords}}">
+    <meta name="copyright" content="{{copyright}}">
     <title>{{title}}</title>
     <style>
         body {
@@ -42,9 +43,35 @@ const DEFAULT_TEMPLATE: &str = r#"<!DOCTYPE html>
             font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
             font-size: 85%;
         }
-        /* Style for centered formula blocks */
         .quarkup-math-block {
             padding: 1rem 0;
+        }
+        /* Style for the advanced tables (Lattices) */
+        table.quarkup-lattice {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            font-size: 14px;
+        }
+        table.quarkup-lattice th, table.quarkup-lattice td {
+            border: 1px solid #e1e4e8;
+            padding: 10px 12px;
+            text-align: left;
+        }
+        table.quarkup-lattice thead th {
+            background-color: #8fb8cf;
+            font-weight: 600;
+        }
+        table.quarkup-lattice tfoot td {
+            background-color: #8fb8cf;
+            font-style: italic;
+            border-top: 2px double #e1e4e8;
+        }
+        table.quarkup-lattice tr.section-row td {
+            background-color: #ebf8ff;
+            font-weight: bold;
+            color: #2b6cb0;
+            text-align: center;
         }
     </style>
 </head>
@@ -56,19 +83,17 @@ const DEFAULT_TEMPLATE: &str = r#"<!DOCTYPE html>
 pub struct HtmlRenderer {
     template: String,
     monolithic: bool,
-    // English comment: Keep cached syntax and theme sets to avoid rebuilding on every block
     syntax_set: SyntaxSet,
     theme: Theme,
 }
 
 impl HtmlRenderer {
-    // English comment: Initializes renderer with custom template, monolithic flag, and loads syntect assets
     pub fn new(custom_template: Option<String>, monolithic: bool) -> Self {
         let syntax_set = SyntaxSet::load_defaults_newlines();
         let theme_set = ThemeSet::load_defaults();
-        
-        // English comment: Choose "InspiredGitHub" for a clean, light theme that matches our layout
-        let theme = theme_set.themes
+
+        let theme = theme_set
+            .themes
             .get("InspiredGitHub")
             .cloned()
             .unwrap_or_else(|| theme_set.themes.values().next().unwrap().clone());
@@ -85,15 +110,20 @@ impl HtmlRenderer {
         let mut content_html = String::new();
         let mut title = String::from("Untitled Quarkup Document");
         let mut author = String::from("Anonymous");
-        let mut lang = String::from("en"); // English comment: Default fallback language
+        let mut description = String::new();
+        let mut keywords = String::new();
+        let mut copyright = String::new();
+        let mut lang = String::from("en");
 
-        // English comment: Extract metadata and render other blocks
         for block in &doc.blocks {
             if let BlockNode::Metadata { key, value } = block {
                 match key.as_str() {
                     "title" => title = value.clone(),
                     "author" => author = value.clone(),
                     "lang" => lang = value.clone(),
+                    "description" => description = value.clone(),
+                    "keywords" => keywords = value.clone(),
+                    "copyright" => copyright = value.clone(),
                     _ => {}
                 }
             } else {
@@ -102,11 +132,13 @@ impl HtmlRenderer {
             }
         }
 
-        // English comment: Replace placeholders in the chosen template
         self.template
             .replace("{{title}}", &title)
             .replace("{{author}}", &author)
             .replace("{{lang}}", &lang)
+            .replace("{{description}}", &description)
+            .replace("{{keywords}}", &keywords)
+            .replace("{{copyright}}", &copyright)
             .replace("{{content}}", &content_html)
     }
 
@@ -142,7 +174,6 @@ impl HtmlRenderer {
                 }
             }
             BlockNode::CodeBlock { language, code } => {
-                // English comment: Determine matching syntax, falling back to plain text if unknown
                 let syntax = language
                     .as_ref()
                     .and_then(|lang| self.syntax_set.find_syntax_by_token(lang))
@@ -151,12 +182,14 @@ impl HtmlRenderer {
                 let mut highlighter = HighlightLines::new(syntax, &self.theme);
                 let mut highlighted_html = String::new();
 
-                // English comment: Highlight line-by-line and generate inline CSS span tags
                 for line in code.lines() {
-                    // English comment: syntect expects trailing newlines for multi-line regexes to work correctly
                     let line_with_nl = format!("{}\n", line);
-                    if let Ok(regions) = highlighter.highlight_line(&line_with_nl, &self.syntax_set) {
-                        if let Ok(html_line) = styled_line_to_highlighted_html(&regions, syntect::html::IncludeBackground::No) {
+                    if let Ok(regions) = highlighter.highlight_line(&line_with_nl, &self.syntax_set)
+                    {
+                        if let Ok(html_line) = styled_line_to_highlighted_html(
+                            &regions,
+                            syntect::html::IncludeBackground::No,
+                        ) {
                             highlighted_html.push_str(&html_line);
                         } else {
                             highlighted_html.push_str(&html_escape(line));
@@ -177,19 +210,147 @@ impl HtmlRenderer {
                     svg
                 )
             }
-            BlockNode::List { ordered, items } => {
-                self.render_list(*ordered, items)
+            BlockNode::List { ordered, items } => self.render_list(*ordered, items),
+            BlockNode::Lattice(rows) => self.render_lattice(rows),
+            BlockNode::Metadata { .. } => String::new(),
+        }
+    }
+
+    fn render_lattice(&self, rows: &[LatticeRow]) -> String {
+        let mut active_rows = rows.to_vec();
+
+        // Step 1: Calculate colspans (right-to-left scan)
+        for row in &mut active_rows {
+            if row.row_type == RowType::Section {
+                continue;
             }
-            BlockNode::Metadata { .. } => {
-                String::new()
+            let mut col = 0;
+            while col < row.cells.len() {
+                if row.cells[col].is_colspan_marker {
+                    if col > 0 {
+                        let mut left_col = col - 1;
+                        while left_col > 0 && row.cells[left_col].is_merged {
+                            left_col -= 1;
+                        }
+                        row.cells[left_col].colspan += 1;
+                        row.cells[col].is_merged = true;
+                    }
+                }
+                col += 1;
             }
         }
+
+        // Step 2: Calculate rowspans (bottom-up scan with strict bounds checking)
+        for row_idx in 0..active_rows.len() {
+            if active_rows[row_idx].row_type == RowType::Section {
+                continue;
+            }
+            let num_cells = active_rows[row_idx].cells.len();
+            for col_idx in 0..num_cells {
+                if active_rows[row_idx].cells[col_idx].is_rowspan_marker {
+                    if row_idx > 0 {
+                        let mut top_row = row_idx - 1;
+                        while top_row > 0 && active_rows[top_row].row_type == RowType::Section {
+                            top_row -= 1;
+                        }
+                        // CRITICAL FIX: Guard against uneven column counts safely
+                        if col_idx < active_rows[top_row].cells.len() {
+                            let mut target_row = top_row;
+                            while target_row > 0
+                                && col_idx < active_rows[target_row].cells.len()
+                                && active_rows[target_row].cells[col_idx].is_merged
+                                && !active_rows[target_row].cells[col_idx].is_colspan_marker
+                            {
+                                target_row -= 1;
+                            }
+                            if col_idx < active_rows[target_row].cells.len() {
+                                active_rows[target_row].cells[col_idx].rowspan += 1;
+                                active_rows[row_idx].cells[col_idx].is_merged = true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Find the maximum column width of the grid safely
+        let max_cols = active_rows
+            .iter()
+            .filter(|r| r.row_type != RowType::Section)
+            .map(|r| r.cells.len())
+            .max()
+            .unwrap_or(0);
+
+        let mut html = String::from("<table class=\"quarkup-lattice\">\n");
+        let mut in_thead = false;
+        let mut in_tfoot = false;
+
+        for row in &active_rows {
+            // Manage clean HTML section wrapping
+            if row.row_type == RowType::Header && !in_thead {
+                html.push_str("  <thead>\n");
+                in_thead = true;
+            } else if row.row_type != RowType::Header && in_thead {
+                html.push_str("  </thead>\n");
+                in_thead = false;
+            }
+
+            if row.row_type == RowType::Footer && !in_tfoot {
+                html.push_str("  <tfoot>\n");
+                in_tfoot = true;
+            }
+
+            if row.row_type == RowType::Section {
+                html.push_str("  <tr class=\"section-row\">\n");
+                let cell_content = if !row.cells.is_empty() {
+                    self.render_inline_list(&row.cells[0].content)
+                } else {
+                    String::new()
+                };
+                html.push_str(&format!(
+                    "    <td colspan=\"{}\">{}</td>\n",
+                    max_cols, cell_content
+                ));
+                html.push_str("  </tr>\n");
+            } else {
+                html.push_str("  <tr>\n");
+                for cell in &row.cells {
+                    // If the cell was just a structural placeholder or empty gap, render it cleanly
+                    if cell.is_merged {
+                        continue;
+                    }
+                    let tag = if row.row_type == RowType::Header {
+                        "th"
+                    } else {
+                        "td"
+                    };
+                    let mut attrs = String::new();
+                    if cell.colspan > 1 {
+                        attrs.push_str(&format!(" colspan=\"{}\"", cell.colspan));
+                    }
+                    if cell.rowspan > 1 {
+                        attrs.push_str(&format!(" rowspan=\"{}\"", cell.rowspan));
+                    }
+
+                    let content = self.render_inline_list(&cell.content);
+                    html.push_str(&format!("    <{}{} >{}</{}>\n", tag, attrs, content, tag));
+                }
+                html.push_str("  </tr>\n");
+            }
+        }
+
+        if in_tfoot {
+            html.push_str("  </tfoot>\n");
+        }
+
+        html.push_str("</table>\n");
+        html
     }
 
     fn render_list(&self, ordered: bool, items: &[ListItem]) -> String {
         let mut html = String::new();
         let main_tag = if ordered { "ol" } else { "ul" };
-        
+
         let mut current_level = 0;
         let mut tag_stack = Vec::new();
 
@@ -209,7 +370,10 @@ impl HtmlRenderer {
                 }
             }
 
-            html.push_str(&format!("<li>{}</li>\n", self.render_inline_list(&item.content).trim()));
+            html.push_str(&format!(
+                "<li>{}</li>\n",
+                self.render_inline_list(&item.content).trim()
+            ));
         }
 
         while let Some(closed_tag) = tag_stack.pop() {
@@ -240,16 +404,18 @@ impl HtmlRenderer {
                     Flavor::Down => format!("<sub>{}</sub>", rendered_content),
                     Flavor::Charm => format!("<em>{}</em>", rendered_content),
                     Flavor::Strange => format!("<code>{}</code>", rendered_content),
-                    Flavor::Neutrino | Flavor::Electron | Flavor::Top | Flavor::Bottom | Flavor::Graphic => {
-                        rendered_content
-                    }
+                    Flavor::Neutrino
+                    | Flavor::Electron
+                    | Flavor::Top
+                    | Flavor::Bottom
+                    | Flavor::Graphic
+                    | Flavor::Lattice => rendered_content,
                 }
             }
         }
     }
 }
 
-// English comment: Utilizes mathjax_svg_rs to generate standalone vector SVGs from TeX math markup
 fn compile_latex_to_svg(latex: &str, is_block: bool) -> String {
     let options = mathjax_svg_rs::Options::default();
 
@@ -261,16 +427,18 @@ fn compile_latex_to_svg(latex: &str, is_block: bool) -> String {
             svg
         }
         Err(_) => {
-            format!("<span class=\"math-error\">[Math Error: {}]</span>", html_escape(latex))
+            format!(
+                "<span class=\"math-error\">[Math Error: {}]</span>",
+                html_escape(latex)
+            )
         }
     }
 }
 
-// English comment: Resolves the local image path, encodes it to base64, and constructs a data URI
 fn get_image_data_url(image_path: &str) -> Result<String, std::io::Error> {
     let bytes = fs::read(image_path)?;
     let base64_encoded = BASE64_STANDARD.encode(bytes);
-    
+
     let path = Path::new(image_path);
     let mime_type = match path.extension().and_then(|ext| ext.to_str()) {
         Some("png") => "image/png",

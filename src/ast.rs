@@ -1,6 +1,6 @@
 use crate::lexer::Flavor;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum InlineNode {
     Text(String),
     Formatted {
@@ -10,13 +10,37 @@ pub enum InlineNode {
     InlineMath(String),
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct ListItem {
     pub level: usize,
     pub content: Vec<InlineNode>,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
+pub enum RowType {
+    Header,
+    Body,
+    Footer,
+    Section,
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct LatticeCell {
+    pub content: Vec<InlineNode>,
+    pub colspan: usize,
+    pub rowspan: usize,
+    pub is_merged: bool,
+    pub is_colspan_marker: bool,
+    pub is_rowspan_marker: bool,
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct LatticeRow {
+    pub row_type: RowType,
+    pub cells: Vec<LatticeCell>,
+}
+
+#[derive(Debug, PartialEq, Clone)]
 pub enum BlockNode {
     Heading {
         level: usize,
@@ -40,9 +64,10 @@ pub enum BlockNode {
         ordered: bool,
         items: Vec<ListItem>,
     },
+    Lattice(Vec<LatticeRow>),
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Document {
     pub blocks: Vec<BlockNode>,
 }
