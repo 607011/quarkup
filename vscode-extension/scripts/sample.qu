@@ -1,0 +1,28 @@
+.t title A Test Document
+.u Heading One
+.uu Heading Two
+Plain paragraph with .c italic.. and .m bold.. and .m bold with .c nested italic.. inside..
+Molecule H.d 2..O and a.u 2.. + b.u 2.. = c.u 2...
+Inline code .s let x = 1..
+Available .b target=web|only in your browser...
+.b target=web
+.u Nested heading inside a conditional
+Web-only paragraph inside a block.
+..
+.n First bullet
+.nn Nested bullet
+.e Ordered one
+.g picture.jpg A caption
+.l
+h: A ; B
+merged ; >
+x ; .> right
+y ; .^ center
+under ; _
+..
+.s rust
+fn main() {}
+..
+# a comment
+// another comment
+e.g. this stays plain, as does file.txt

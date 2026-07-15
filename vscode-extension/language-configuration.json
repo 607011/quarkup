@@ -1,0 +1,12 @@
+{
+  "comments": {
+    "lineComment": "//"
+  },
+  "wordPattern": "\\.[a-z]+|[^\\s.]+",
+  "folding": {
+    "markers": {
+      "start": "^\\s*\\.(l|s|b)\\b",
+      "end": "^\\s*\\.\\.\\s*$"
+    }
+  }
+}

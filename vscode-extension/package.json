@@ -1,0 +1,104 @@
+{
+  "name": "quarkup",
+  "displayName": "Quarkup",
+  "description": "Syntax highlighting and live preview for Quarkup, the subatomic markup language.",
+  "version": "0.1.0",
+  "publisher": "quarkup",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/607011/quarkup.git",
+    "directory": "vscode-extension"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "activationEvents": [
+    "onLanguage:quarkup"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "quarkup",
+        "aliases": [
+          "Quarkup",
+          "quarkup"
+        ],
+        "extensions": [
+          ".qu"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "quarkup",
+        "scopeName": "source.quarkup",
+        "path": "./syntaxes/quarkup.tmLanguage.json"
+      }
+    ],
+    "commands": [
+      {
+        "command": "quarkup.showPreview",
+        "title": "Open Preview",
+        "category": "Quarkup",
+        "icon": "$(open-preview)"
+      },
+      {
+        "command": "quarkup.showPreviewToSide",
+        "title": "Open Preview to the Side",
+        "category": "Quarkup",
+        "icon": "$(open-preview)"
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "quarkup.showPreviewToSide",
+          "when": "editorLangId == quarkup",
+          "group": "navigation"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "quarkup.showPreview",
+          "when": "editorLangId == quarkup"
+        },
+        {
+          "command": "quarkup.showPreviewToSide",
+          "when": "editorLangId == quarkup"
+        }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "quarkup.showPreview",
+        "key": "ctrl+shift+v",
+        "mac": "cmd+shift+v",
+        "when": "editorLangId == quarkup"
+      },
+      {
+        "command": "quarkup.showPreviewToSide",
+        "key": "ctrl+k v",
+        "mac": "cmd+k v",
+        "when": "editorLangId == quarkup"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -w -p ./",
+    "build-assets": "bash ./scripts/build-assets.sh",
+    "package": "npm run build-assets && npm run compile && npx @vscode/vsce package"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.43",
+    "@types/vscode": "^1.85.0",
+    "typescript": "^5.9.3"
+  }
+}

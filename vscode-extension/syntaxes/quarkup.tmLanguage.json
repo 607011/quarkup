@@ -1,0 +1,485 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Quarkup",
+  "scopeName": "source.quarkup",
+  "patterns": [
+    { "include": "#comment" },
+    { "include": "#code-block-bare" },
+    { "include": "#code-block-math" },
+    { "include": "#code-block-known-languages" },
+    { "include": "#code-block-generic" },
+    { "include": "#lattice-block" },
+    { "include": "#conditional-block" },
+    { "include": "#heading-1" },
+    { "include": "#heading-2" },
+    { "include": "#heading-3" },
+    { "include": "#heading-4" },
+    { "include": "#heading-5" },
+    { "include": "#heading-6" },
+    { "include": "#metadata" },
+    { "include": "#image" },
+    { "include": "#list-unordered" },
+    { "include": "#list-ordered" },
+    { "include": "#inline" }
+  ],
+  "repository": {
+    "comment": {
+      "match": "^[ \\t]*(#|//).*$",
+      "name": "comment.line.quarkup"
+    },
+
+    "code-block-bare": {
+      "begin": "^(\\.s+)[ \\t]*$",
+      "beginCaptures": {
+        "1": { "name": "keyword.control.codeblock.quarkup entity.name.tag.quarkup" }
+      },
+      "end": "^[ \\t]*(?!\\\\\\.\\.)\\.\\..*$",
+      "endCaptures": {
+        "0": { "name": "keyword.control.codeblock.quarkup entity.name.tag.quarkup" }
+      },
+      "name": "markup.raw.block.quarkup"
+    },
+
+    "code-block-math": {
+      "begin": "^(\\.s+)[ \\t]+(math)[ \\t]*$",
+      "beginCaptures": {
+        "1": { "name": "keyword.control.codeblock.quarkup entity.name.tag.quarkup" },
+        "2": { "name": "entity.name.tag.language.quarkup" }
+      },
+      "end": "^[ \\t]*(?!\\\\\\.\\.)\\.\\..*$",
+      "endCaptures": {
+        "0": { "name": "keyword.control.codeblock.quarkup entity.name.tag.quarkup" }
+      },
+      "name": "string.other.math.block.quarkup"
+    },
+
+    "code-block-known-languages": {
+      "patterns": [
+        { "include": "#code-block-lang-rust" },
+        { "include": "#code-block-lang-js" },
+        { "include": "#code-block-lang-ts" },
+        { "include": "#code-block-lang-json" },
+        { "include": "#code-block-lang-python" },
+        { "include": "#code-block-lang-html" },
+        { "include": "#code-block-lang-css" },
+        { "include": "#code-block-lang-c" },
+        { "include": "#code-block-lang-cpp" },
+        { "include": "#code-block-lang-go" },
+        { "include": "#code-block-lang-ruby" },
+        { "include": "#code-block-lang-yaml" },
+        { "include": "#code-block-lang-shell" },
+        { "include": "#code-block-lang-sql" },
+        { "include": "#code-block-lang-markdown" },
+        { "include": "#code-block-lang-xml" },
+        { "include": "#code-block-lang-java" },
+        { "include": "#code-block-lang-csharp" },
+        { "include": "#code-block-lang-php" },
+        { "include": "#code-block-lang-toml" }
+      ]
+    },
+    "code-block-lang-rust": {
+      "begin": "^(\\.s+)[ \\t]+(rust|rs)[ \\t]*$",
+      "beginCaptures": { "1": { "name": "keyword.control.codeblock.quarkup entity.name.tag.quarkup" }, "2": { "name": "entity.name.tag.language.quarkup" } },
+      "end": "^[ \\t]*(?!\\\\\\.\\.)\\.\\..*$",
+      "endCaptures": { "0": { "name": "keyword.control.codeblock.quarkup entity.name.tag.quarkup" } },
+      "name": "markup.raw.block.quarkup",
+      "contentName": "meta.embedded.block.rust",
+      "patterns": [{ "include": "source.rust" }]
+    },
+    "code-block-lang-js": {
+      "begin": "^(\\.s+)[ \\t]+(js|javascript)[ \\t]*$",
+      "beginCaptures": { "1": { "name": "keyword.control.codeblock.quarkup entity.name.tag.quarkup" }, "2": { "name": "entity.name.tag.language.quarkup" } },
+      "end": "^[ \\t]*(?!\\\\\\.\\.)\\.\\..*$",
+      "endCaptures": { "0": { "name": "keyword.control.codeblock.quarkup entity.name.tag.quarkup" } },
+      "name": "markup.raw.block.quarkup",
+      "contentName": "meta.embedded.block.js",
+      "patterns": [{ "include": "source.js" }]
+    },
+    "code-block-lang-ts": {
+      "begin": "^(\\.s+)[ \\t]+(ts|typescript)[ \\t]*$",
+      "beginCaptures": { "1": { "name": "keyword.control.codeblock.quarkup entity.name.tag.quarkup" }, "2": { "name": "entity.name.tag.language.quarkup" } },
+      "end": "^[ \\t]*(?!\\\\\\.\\.)\\.\\..*$",
+      "endCaptures": { "0": { "name": "keyword.control.codeblock.quarkup entity.name.tag.quarkup" } },
+      "name": "markup.raw.block.quarkup",
+      "contentName": "meta.embedded.block.ts",
+      "patterns": [{ "include": "source.ts" }]
+    },
+    "code-block-lang-json": {
+      "begin": "^(\\.s+)[ \\t]+(json)[ \\t]*$",
+      "beginCaptures": { "1": { "name": "keyword.control.codeblock.quarkup entity.name.tag.quarkup" }, "2": { "name": "entity.name.tag.language.quarkup" } },
+      "end": "^[ \\t]*(?!\\\\\\.\\.)\\.\\..*$",
+      "endCaptures": { "0": { "name": "keyword.control.codeblock.quarkup entity.name.tag.quarkup" } },
+      "name": "markup.raw.block.quarkup",
+      "contentName": "meta.embedded.block.json",
+      "patterns": [{ "include": "source.json" }]
+    },
+    "code-block-lang-python": {
+      "begin": "^(\\.s+)[ \\t]+(python|py)[ \\t]*$",
+      "beginCaptures": { "1": { "name": "keyword.control.codeblock.quarkup entity.name.tag.quarkup" }, "2": { "name": "entity.name.tag.language.quarkup" } },
+      "end": "^[ \\t]*(?!\\\\\\.\\.)\\.\\..*$",
+      "endCaptures": { "0": { "name": "keyword.control.codeblock.quarkup entity.name.tag.quarkup" } },
+      "name": "markup.raw.block.quarkup",
+      "contentName": "meta.embedded.block.python",
+      "patterns": [{ "include": "source.python" }]
+    },
+    "code-block-lang-html": {
+      "begin": "^(\\.s+)[ \\t]+(html)[ \\t]*$",
+      "beginCaptures": { "1": { "name": "keyword.control.codeblock.quarkup entity.name.tag.quarkup" }, "2": { "name": "entity.name.tag.language.quarkup" } },
+      "end": "^[ \\t]*(?!\\\\\\.\\.)\\.\\..*$",
+      "endCaptures": { "0": { "name": "keyword.control.codeblock.quarkup entity.name.tag.quarkup" } },
+      "name": "markup.raw.block.quarkup",
+      "contentName": "meta.embedded.block.html",
+      "patterns": [{ "include": "text.html.basic" }]
+    },
+    "code-block-lang-css": {
+      "begin": "^(\\.s+)[ \\t]+(css)[ \\t]*$",
+      "beginCaptures": { "1": { "name": "keyword.control.codeblock.quarkup entity.name.tag.quarkup" }, "2": { "name": "entity.name.tag.language.quarkup" } },
+      "end": "^[ \\t]*(?!\\\\\\.\\.)\\.\\..*$",
+      "endCaptures": { "0": { "name": "keyword.control.codeblock.quarkup entity.name.tag.quarkup" } },
+      "name": "markup.raw.block.quarkup",
+      "contentName": "meta.embedded.block.css",
+      "patterns": [{ "include": "source.css" }]
+    },
+    "code-block-lang-c": {
+      "begin": "^(\\.s+)[ \\t]+(c)[ \\t]*$",
+      "beginCaptures": { "1": { "name": "keyword.control.codeblock.quarkup entity.name.tag.quarkup" }, "2": { "name": "entity.name.tag.language.quarkup" } },
+      "end": "^[ \\t]*(?!\\\\\\.\\.)\\.\\..*$",
+      "endCaptures": { "0": { "name": "keyword.control.codeblock.quarkup entity.name.tag.quarkup" } },
+      "name": "markup.raw.block.quarkup",
+      "contentName": "meta.embedded.block.c",
+      "patterns": [{ "include": "source.c" }]
+    },
+    "code-block-lang-cpp": {
+      "begin": "^(\\.s+)[ \\t]+(cpp|c\\+\\+)[ \\t]*$",
+      "beginCaptures": { "1": { "name": "keyword.control.codeblock.quarkup entity.name.tag.quarkup" }, "2": { "name": "entity.name.tag.language.quarkup" } },
+      "end": "^[ \\t]*(?!\\\\\\.\\.)\\.\\..*$",
+      "endCaptures": { "0": { "name": "keyword.control.codeblock.quarkup entity.name.tag.quarkup" } },
+      "name": "markup.raw.block.quarkup",
+      "contentName": "meta.embedded.block.cpp",
+      "patterns": [{ "include": "source.cpp" }]
+    },
+    "code-block-lang-go": {
+      "begin": "^(\\.s+)[ \\t]+(go|golang)[ \\t]*$",
+      "beginCaptures": { "1": { "name": "keyword.control.codeblock.quarkup entity.name.tag.quarkup" }, "2": { "name": "entity.name.tag.language.quarkup" } },
+      "end": "^[ \\t]*(?!\\\\\\.\\.)\\.\\..*$",
+      "endCaptures": { "0": { "name": "keyword.control.codeblock.quarkup entity.name.tag.quarkup" } },
+      "name": "markup.raw.block.quarkup",
+      "contentName": "meta.embedded.block.go",
+      "patterns": [{ "include": "source.go" }]
+    },
+    "code-block-lang-ruby": {
+      "begin": "^(\\.s+)[ \\t]+(ruby|rb)[ \\t]*$",
+      "beginCaptures": { "1": { "name": "keyword.control.codeblock.quarkup entity.name.tag.quarkup" }, "2": { "name": "entity.name.tag.language.quarkup" } },
+      "end": "^[ \\t]*(?!\\\\\\.\\.)\\.\\..*$",
+      "endCaptures": { "0": { "name": "keyword.control.codeblock.quarkup entity.name.tag.quarkup" } },
+      "name": "markup.raw.block.quarkup",
+      "contentName": "meta.embedded.block.ruby",
+      "patterns": [{ "include": "source.ruby" }]
+    },
+    "code-block-lang-yaml": {
+      "begin": "^(\\.s+)[ \\t]+(yaml|yml)[ \\t]*$",
+      "beginCaptures": { "1": { "name": "keyword.control.codeblock.quarkup entity.name.tag.quarkup" }, "2": { "name": "entity.name.tag.language.quarkup" } },
+      "end": "^[ \\t]*(?!\\\\\\.\\.)\\.\\..*$",
+      "endCaptures": { "0": { "name": "keyword.control.codeblock.quarkup entity.name.tag.quarkup" } },
+      "name": "markup.raw.block.quarkup",
+      "contentName": "meta.embedded.block.yaml",
+      "patterns": [{ "include": "source.yaml" }]
+    },
+    "code-block-lang-shell": {
+      "begin": "^(\\.s+)[ \\t]+(sh|shell|bash|zsh)[ \\t]*$",
+      "beginCaptures": { "1": { "name": "keyword.control.codeblock.quarkup entity.name.tag.quarkup" }, "2": { "name": "entity.name.tag.language.quarkup" } },
+      "end": "^[ \\t]*(?!\\\\\\.\\.)\\.\\..*$",
+      "endCaptures": { "0": { "name": "keyword.control.codeblock.quarkup entity.name.tag.quarkup" } },
+      "name": "markup.raw.block.quarkup",
+      "contentName": "meta.embedded.block.shell",
+      "patterns": [{ "include": "source.shell" }]
+    },
+    "code-block-lang-sql": {
+      "begin": "^(\\.s+)[ \\t]+(sql)[ \\t]*$",
+      "beginCaptures": { "1": { "name": "keyword.control.codeblock.quarkup entity.name.tag.quarkup" }, "2": { "name": "entity.name.tag.language.quarkup" } },
+      "end": "^[ \\t]*(?!\\\\\\.\\.)\\.\\..*$",
+      "endCaptures": { "0": { "name": "keyword.control.codeblock.quarkup entity.name.tag.quarkup" } },
+      "name": "markup.raw.block.quarkup",
+      "contentName": "meta.embedded.block.sql",
+      "patterns": [{ "include": "source.sql" }]
+    },
+    "code-block-lang-markdown": {
+      "begin": "^(\\.s+)[ \\t]+(markdown|md)[ \\t]*$",
+      "beginCaptures": { "1": { "name": "keyword.control.codeblock.quarkup entity.name.tag.quarkup" }, "2": { "name": "entity.name.tag.language.quarkup" } },
+      "end": "^[ \\t]*(?!\\\\\\.\\.)\\.\\..*$",
+      "endCaptures": { "0": { "name": "keyword.control.codeblock.quarkup entity.name.tag.quarkup" } },
+      "name": "markup.raw.block.quarkup",
+      "contentName": "meta.embedded.block.markdown",
+      "patterns": [{ "include": "text.html.markdown" }]
+    },
+    "code-block-lang-xml": {
+      "begin": "^(\\.s+)[ \\t]+(xml)[ \\t]*$",
+      "beginCaptures": { "1": { "name": "keyword.control.codeblock.quarkup entity.name.tag.quarkup" }, "2": { "name": "entity.name.tag.language.quarkup" } },
+      "end": "^[ \\t]*(?!\\\\\\.\\.)\\.\\..*$",
+      "endCaptures": { "0": { "name": "keyword.control.codeblock.quarkup entity.name.tag.quarkup" } },
+      "name": "markup.raw.block.quarkup",
+      "contentName": "meta.embedded.block.xml",
+      "patterns": [{ "include": "text.xml" }]
+    },
+    "code-block-lang-java": {
+      "begin": "^(\\.s+)[ \\t]+(java)[ \\t]*$",
+      "beginCaptures": { "1": { "name": "keyword.control.codeblock.quarkup entity.name.tag.quarkup" }, "2": { "name": "entity.name.tag.language.quarkup" } },
+      "end": "^[ \\t]*(?!\\\\\\.\\.)\\.\\..*$",
+      "endCaptures": { "0": { "name": "keyword.control.codeblock.quarkup entity.name.tag.quarkup" } },
+      "name": "markup.raw.block.quarkup",
+      "contentName": "meta.embedded.block.java",
+      "patterns": [{ "include": "source.java" }]
+    },
+    "code-block-lang-csharp": {
+      "begin": "^(\\.s+)[ \\t]+(csharp|cs|c#)[ \\t]*$",
+      "beginCaptures": { "1": { "name": "keyword.control.codeblock.quarkup entity.name.tag.quarkup" }, "2": { "name": "entity.name.tag.language.quarkup" } },
+      "end": "^[ \\t]*(?!\\\\\\.\\.)\\.\\..*$",
+      "endCaptures": { "0": { "name": "keyword.control.codeblock.quarkup entity.name.tag.quarkup" } },
+      "name": "markup.raw.block.quarkup",
+      "contentName": "meta.embedded.block.csharp",
+      "patterns": [{ "include": "source.cs" }]
+    },
+    "code-block-lang-php": {
+      "begin": "^(\\.s+)[ \\t]+(php)[ \\t]*$",
+      "beginCaptures": { "1": { "name": "keyword.control.codeblock.quarkup entity.name.tag.quarkup" }, "2": { "name": "entity.name.tag.language.quarkup" } },
+      "end": "^[ \\t]*(?!\\\\\\.\\.)\\.\\..*$",
+      "endCaptures": { "0": { "name": "keyword.control.codeblock.quarkup entity.name.tag.quarkup" } },
+      "name": "markup.raw.block.quarkup",
+      "contentName": "meta.embedded.block.php",
+      "patterns": [{ "include": "source.php" }]
+    },
+    "code-block-lang-toml": {
+      "begin": "^(\\.s+)[ \\t]+(toml)[ \\t]*$",
+      "beginCaptures": { "1": { "name": "keyword.control.codeblock.quarkup entity.name.tag.quarkup" }, "2": { "name": "entity.name.tag.language.quarkup" } },
+      "end": "^[ \\t]*(?!\\\\\\.\\.)\\.\\..*$",
+      "endCaptures": { "0": { "name": "keyword.control.codeblock.quarkup entity.name.tag.quarkup" } },
+      "name": "markup.raw.block.quarkup",
+      "contentName": "meta.embedded.block.toml",
+      "patterns": [{ "include": "source.toml" }]
+    },
+
+    "code-block-generic": {
+      "begin": "^(\\.s+)[ \\t]+(\\S+)[ \\t]*$",
+      "beginCaptures": {
+        "1": { "name": "keyword.control.codeblock.quarkup entity.name.tag.quarkup" },
+        "2": { "name": "entity.name.tag.language.quarkup" }
+      },
+      "end": "^[ \\t]*(?!\\\\\\.\\.)\\.\\..*$",
+      "endCaptures": {
+        "0": { "name": "keyword.control.codeblock.quarkup entity.name.tag.quarkup" }
+      },
+      "name": "markup.raw.block.quarkup"
+    },
+
+    "lattice-block": {
+      "begin": "^(\\.l)[ \\t]*$",
+      "beginCaptures": {
+        "1": { "name": "keyword.control.table.quarkup entity.name.tag.quarkup" }
+      },
+      "end": "^[ \\t]*\\.\\..*$",
+      "endCaptures": {
+        "0": { "name": "keyword.control.table.quarkup entity.name.tag.quarkup" }
+      },
+      "name": "meta.table.quarkup",
+      "patterns": [
+        {
+          "match": "^(h:|f:|s:)",
+          "name": "keyword.other.rowtype.quarkup keyword.control.quarkup entity.name.tag.quarkup"
+        },
+        {
+          "match": ";",
+          "name": "punctuation.separator.cell.quarkup"
+        },
+        {
+          "match": "(?<=;|^)[ \\t]*(>)[ \\t]*(?=;|$)",
+          "name": "keyword.operator.colspan.quarkup entity.name.tag.quarkup"
+        },
+        {
+          "match": "(?<=;|^)[ \\t]*(_)[ \\t]*(?=;|$)",
+          "name": "keyword.operator.rowspan.quarkup entity.name.tag.quarkup"
+        },
+        {
+          "match": "(\\.\\^|\\.>)[ \\t]",
+          "name": "keyword.operator.alignment.quarkup entity.name.tag.quarkup"
+        },
+        { "include": "#inline" }
+      ]
+    },
+
+    "conditional-block": {
+      "begin": "^(\\.b)[ \\t]+(!)?(.+)$",
+      "beginCaptures": {
+        "1": { "name": "keyword.control.conditional.quarkup entity.name.tag.quarkup" },
+        "2": { "name": "keyword.operator.negation.quarkup" },
+        "3": { "name": "variable.parameter.condition.quarkup" }
+      },
+      "end": "^[ \\t]*\\.\\..*$",
+      "endCaptures": {
+        "0": { "name": "keyword.control.conditional.quarkup entity.name.tag.quarkup" }
+      },
+      "name": "meta.conditional.quarkup",
+      "patterns": [{ "include": "$self" }]
+    },
+
+    "heading-1": {
+      "match": "^(\\.u)(?!u)[ \\t]+(.*)$",
+      "captures": {
+        "1": { "name": "keyword.control.heading.quarkup entity.name.tag.quarkup" },
+        "2": { "name": "markup.heading.1.quarkup", "patterns": [{ "include": "#inline" }] }
+      }
+    },
+    "heading-2": {
+      "match": "^(\\.uu)(?!u)[ \\t]+(.*)$",
+      "captures": {
+        "1": { "name": "keyword.control.heading.quarkup entity.name.tag.quarkup" },
+        "2": { "name": "markup.heading.2.quarkup", "patterns": [{ "include": "#inline" }] }
+      }
+    },
+    "heading-3": {
+      "match": "^(\\.uuu)(?!u)[ \\t]+(.*)$",
+      "captures": {
+        "1": { "name": "keyword.control.heading.quarkup entity.name.tag.quarkup" },
+        "2": { "name": "markup.heading.3.quarkup", "patterns": [{ "include": "#inline" }] }
+      }
+    },
+    "heading-4": {
+      "match": "^(\\.uuuu)(?!u)[ \\t]+(.*)$",
+      "captures": {
+        "1": { "name": "keyword.control.heading.quarkup entity.name.tag.quarkup" },
+        "2": { "name": "markup.heading.4.quarkup", "patterns": [{ "include": "#inline" }] }
+      }
+    },
+    "heading-5": {
+      "match": "^(\\.uuuuu)(?!u)[ \\t]+(.*)$",
+      "captures": {
+        "1": { "name": "keyword.control.heading.quarkup entity.name.tag.quarkup" },
+        "2": { "name": "markup.heading.5.quarkup", "patterns": [{ "include": "#inline" }] }
+      }
+    },
+    "heading-6": {
+      "match": "^(\\.u{6,})[ \\t]+(.*)$",
+      "captures": {
+        "1": { "name": "keyword.control.heading.quarkup entity.name.tag.quarkup" },
+        "2": { "name": "markup.heading.6.quarkup", "patterns": [{ "include": "#inline" }] }
+      }
+    },
+
+    "metadata": {
+      "match": "^(\\.t)[ \\t]+(\\S+)(?:[ \\t]+(.*))?$",
+      "captures": {
+        "1": { "name": "keyword.control.metadata.quarkup entity.name.tag.quarkup" },
+        "2": { "name": "variable.other.property.quarkup" },
+        "3": { "name": "string.unquoted.quarkup" }
+      }
+    },
+
+    "image": {
+      "match": "^(\\.g)[ \\t]+(\\S+)(?:[ \\t]+(.*))?$",
+      "captures": {
+        "1": { "name": "keyword.other.image.quarkup keyword.control.quarkup entity.name.tag.quarkup" },
+        "2": { "name": "string.other.link.quarkup" },
+        "3": { "name": "string.unquoted.quarkup", "patterns": [{ "include": "#inline" }] }
+      }
+    },
+
+    "list-unordered": {
+      "match": "^(\\.n+)[ \\t]+(.*)$",
+      "captures": {
+        "1": { "name": "punctuation.definition.list.quarkup keyword.control.quarkup entity.name.tag.quarkup" },
+        "2": { "patterns": [{ "include": "#inline" }] }
+      }
+    },
+    "list-ordered": {
+      "match": "^(\\.e+)[ \\t]+(.*)$",
+      "captures": {
+        "1": { "name": "punctuation.definition.list.quarkup keyword.control.quarkup entity.name.tag.quarkup" },
+        "2": { "patterns": [{ "include": "#inline" }] }
+      }
+    },
+
+    "inline": {
+      "patterns": [
+        { "include": "#inline-math" },
+        { "include": "#inline-code" },
+        { "include": "#inline-bold" },
+        { "include": "#inline-italic" },
+        { "include": "#inline-superscript" },
+        { "include": "#inline-subscript" },
+        { "include": "#inline-link" },
+        { "include": "#inline-conditional" }
+      ]
+    },
+    "inline-math": {
+      "begin": "(\\.s+)[ \\t](math)[ \\t]",
+      "beginCaptures": {
+        "1": { "name": "punctuation.definition.code.quarkup keyword.control.quarkup entity.name.tag.quarkup" },
+        "2": { "name": "entity.name.tag.language.quarkup" }
+      },
+      "end": "\\.\\.",
+      "endCaptures": { "0": { "name": "punctuation.definition.code.quarkup keyword.control.quarkup entity.name.tag.quarkup" } },
+      "name": "string.other.math.inline.quarkup"
+    },
+    "inline-code": {
+      "begin": "(\\.s+)[ \\t]",
+      "beginCaptures": { "1": { "name": "punctuation.definition.code.quarkup keyword.control.quarkup entity.name.tag.quarkup" } },
+      "end": "\\.\\.",
+      "endCaptures": { "0": { "name": "punctuation.definition.code.quarkup keyword.control.quarkup entity.name.tag.quarkup" } },
+      "name": "markup.inline.raw.quarkup"
+    },
+    "inline-bold": {
+      "begin": "(\\.m+)[ \\t]",
+      "beginCaptures": { "1": { "name": "punctuation.definition.bold.quarkup keyword.control.quarkup entity.name.tag.quarkup" } },
+      "end": "\\.\\.",
+      "endCaptures": { "0": { "name": "punctuation.definition.bold.quarkup keyword.control.quarkup entity.name.tag.quarkup" } },
+      "name": "markup.bold.quarkup",
+      "patterns": [{ "include": "#inline" }]
+    },
+    "inline-italic": {
+      "begin": "(\\.c+)[ \\t]",
+      "beginCaptures": { "1": { "name": "punctuation.definition.italic.quarkup keyword.control.quarkup entity.name.tag.quarkup" } },
+      "end": "\\.\\.",
+      "endCaptures": { "0": { "name": "punctuation.definition.italic.quarkup keyword.control.quarkup entity.name.tag.quarkup" } },
+      "name": "markup.italic.quarkup",
+      "patterns": [{ "include": "#inline" }]
+    },
+    "inline-superscript": {
+      "begin": "(\\.u+)[ \\t]",
+      "beginCaptures": { "1": { "name": "punctuation.definition.superscript.quarkup keyword.control.quarkup entity.name.tag.quarkup" } },
+      "end": "\\.\\.",
+      "endCaptures": { "0": { "name": "punctuation.definition.superscript.quarkup keyword.control.quarkup entity.name.tag.quarkup" } },
+      "name": "markup.other.superscript.quarkup entity.name.tag.quarkup",
+      "patterns": [{ "include": "#inline" }]
+    },
+    "inline-subscript": {
+      "begin": "(\\.d+)[ \\t]",
+      "beginCaptures": { "1": { "name": "punctuation.definition.subscript.quarkup keyword.control.quarkup entity.name.tag.quarkup" } },
+      "end": "\\.\\.",
+      "endCaptures": { "0": { "name": "punctuation.definition.subscript.quarkup keyword.control.quarkup entity.name.tag.quarkup" } },
+      "name": "markup.other.subscript.quarkup entity.name.tag.quarkup",
+      "patterns": [{ "include": "#inline" }]
+    },
+    "inline-link": {
+      "begin": "(\\.l+)[ \\t]",
+      "beginCaptures": { "1": { "name": "punctuation.definition.link.quarkup keyword.control.quarkup entity.name.tag.quarkup" } },
+      "end": "\\.\\.",
+      "endCaptures": { "0": { "name": "punctuation.definition.link.quarkup keyword.control.quarkup entity.name.tag.quarkup" } },
+      "name": "markup.underline.link.quarkup",
+      "patterns": [
+        { "match": "\\|", "name": "punctuation.separator.link.quarkup" },
+        { "include": "#inline" }
+      ]
+    },
+    "inline-conditional": {
+      "begin": "(\\.b)[ \\t]",
+      "beginCaptures": { "1": { "name": "keyword.control.conditional.inline.quarkup entity.name.tag.quarkup" } },
+      "end": "\\.\\.",
+      "endCaptures": { "0": { "name": "keyword.control.conditional.inline.quarkup entity.name.tag.quarkup" } },
+      "name": "meta.conditional.inline.quarkup",
+      "patterns": [
+        { "match": "!", "name": "keyword.operator.negation.quarkup" },
+        { "match": "\\|", "name": "punctuation.separator.condition.quarkup" },
+        { "include": "#inline" }
+      ]
+    }
+  }
+}

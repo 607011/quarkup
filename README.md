@@ -220,6 +220,12 @@ and open `http://localhost:8080`.
 
 ---
 
+## 🧩 VS Code Extension
+
+Syntax highlighting and a live preview inside VS Code, reusing the same wasm build as the web app — see [`vscode-extension/`](vscode-extension/) for features and setup.
+
+---
+
 ## 🪐 Join the Subatomic Universe
 
 Quarkup is currently in its pre-alpha orbital state. Contributions to the parser or link-refinement mechanics are highly welcome!
