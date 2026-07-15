@@ -46,6 +46,34 @@ fn renders_inline_formatting() {
 }
 
 #[test]
+fn renders_bold_via_muon() {
+    let html = compile("This is .m bold text...\n");
+    assert!(html.contains("<strong>bold text</strong>"));
+}
+
+#[test]
+fn bold_and_italic_nest_in_both_directions() {
+    let html = compile(".m bold with .c nested italic.. inside..\n");
+    assert!(html.contains("<strong>bold with <em>nested italic</em> inside</strong>"));
+
+    let html = compile(".c italic with .m nested bold.. inside..\n");
+    assert!(html.contains("<em>italic with <strong>nested bold</strong> inside</em>"));
+}
+
+#[test]
+fn inline_formatting_still_wraps_when_it_opens_the_paragraph() {
+    // Regression test: parse_block used to consume a leading inline-only
+    // quark (Charm, Muon, ...) before falling through to inline parsing,
+    // silently dropping the InlineNode::Formatted wrapper whenever such a
+    // quark was the very first token of a paragraph.
+    let html = compile(".m Bold from the start..\n");
+    assert!(html.contains("<strong>Bold from the start</strong>"));
+
+    let html = compile(".c Italic from the start..\n");
+    assert!(html.contains("<em>Italic from the start</em>"));
+}
+
+#[test]
 fn renders_superscript_and_subscript() {
     let html = compile("a.u 2.. + b.u 2.. = c.u 2..\nH.d 2..O\n");
     assert!(html.contains("<sup>2</sup>"));
@@ -161,7 +189,10 @@ fn golden_file_example_demo_matches_snapshot() {
     let source = std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/example/demo.qu"))
         .expect("example/demo.qu should exist");
     let actual = compile_with_defines(&source, defines(&[("target", "web")]));
-    let snapshot_path = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/snapshots/example_demo.html");
+    let snapshot_path = concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/tests/snapshots/example_demo.html"
+    );
     let expected = std::fs::read_to_string(snapshot_path).unwrap_or_default();
 
     if std::env::var("BLESS").is_ok() {

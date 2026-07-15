@@ -16,6 +16,7 @@ Formatting behaviors are controlled by a minimal set of flavor letters:
 * **Down (`d`):** Pushes text downwards (Subscript / Footnotes).
 * **Charm (`c`):** Enhances aesthetic appeal (Italics / Emphasis).
 * **Strange (`s`):** Represents foreign, unformatted matter (Code / Listings).
+* **Muon (`m`):** A heavier cousin of the electron — adds visual mass (Bold / Strong).
 * **Top (`t`):** Global metadata properties defined at the top of a document.
 * **Graphic (`g`):** Embedded visual media (Images / Figures).
 
@@ -72,6 +73,7 @@ Inline Elements exist within a line of text. Since they do not end at a line bre
 To maintain perfect legibility, the command particle "clings" to the left word but separates itself from the formatted content with a space.
 
 * **Style & Formatting (Charm):** `This is a .c charming.. experience.`
+* **Bold (Muon):** `This is .m important.. news.` — nests freely with Charm in either direction, e.g. `.m bold with .c nested italic.. inside..`
 * **Inline Code (Strange):** `Run the .s cargo build.. command.`
 * **Superscript & Subscript (Up/Down):** * `a.u 2.. + b.u 2.. = c.u 2..`
   * `H.d 2..O is essential for life.`

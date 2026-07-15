@@ -13,6 +13,7 @@ pub enum Flavor {
     Neutrino, // n
     Electron, // e
     Lattice,  // l
+    Muon,     // m
 }
 
 impl Flavor {
@@ -28,6 +29,7 @@ impl Flavor {
             'n' => Some(Flavor::Neutrino),
             'e' => Some(Flavor::Electron),
             'l' => Some(Flavor::Lattice),
+            'm' => Some(Flavor::Muon),
             _ => None,
         }
     }

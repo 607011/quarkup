@@ -416,6 +416,7 @@ impl HtmlRenderer {
                     Flavor::Down => format!("<sub>{}</sub>", rendered_content),
                     Flavor::Charm => format!("<em>{}</em>", rendered_content),
                     Flavor::Strange => format!("<code>{}</code>", rendered_content),
+                    Flavor::Muon => format!("<strong>{}</strong>", rendered_content),
                     Flavor::Neutrino
                     | Flavor::Electron
                     | Flavor::Top

@@ -61,156 +61,159 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_block(&mut self) -> Option<BlockNode> {
-        match self.peek()? {
-            Token::Quark { flavor, count } => {
-                let flavor = *flavor;
-                let count = *count;
-                self.consume();
+        if let Some(Token::Quark { flavor, count }) = self.peek() {
+            let flavor = *flavor;
+            let count = *count;
 
-                match flavor {
-                    Flavor::Up => {
-                        let content = self.parse_inline_until_line_end();
-                        Some(BlockNode::Heading {
-                            level: count,
-                            content,
+            match flavor {
+                Flavor::Up => {
+                    self.consume();
+                    let content = self.parse_inline_until_line_end();
+                    return Some(BlockNode::Heading {
+                        level: count,
+                        content,
+                    });
+                }
+                Flavor::Top => {
+                    self.consume();
+                    let raw_line = self.collect_raw_line_content();
+                    let mut parts = raw_line.split_whitespace();
+                    return if let Some(key) = parts.next() {
+                        let value = parts.collect::<Vec<&str>>().join(" ");
+                        // Register metadata dynamically inside the parser environment
+                        self.defines.insert(key.to_string(), value.clone());
+                        Some(BlockNode::Metadata {
+                            key: key.to_string(),
+                            value,
                         })
-                    }
-                    Flavor::Top => {
-                        let raw_line = self.collect_raw_line_content();
-                        let mut parts = raw_line.split_whitespace();
-                        if let Some(key) = parts.next() {
-                            let value = parts.collect::<Vec<&str>>().join(" ");
-                            // Register metadata dynamically inside the parser environment
-                            self.defines.insert(key.to_string(), value.clone());
-                            Some(BlockNode::Metadata {
-                                key: key.to_string(),
-                                value,
-                            })
-                        } else {
-                            None
+                    } else {
+                        None
+                    };
+                }
+                Flavor::Graphic => {
+                    self.consume();
+                    let raw_line = self.collect_raw_line_content();
+                    let mut parts = raw_line.split_whitespace();
+                    let path = parts.next()?.to_string();
+                    let caption = if parts.clone().count() > 0 {
+                        Some(parts.collect::<Vec<&str>>().join(" "))
+                    } else {
+                        None
+                    };
+                    return Some(BlockNode::Image { path, caption });
+                }
+                Flavor::Lattice if count == 1 => {
+                    self.consume();
+                    self.collect_raw_line_content();
+                    let mut rows = Vec::new();
+
+                    while let Some(tok) = self.peek() {
+                        if let Token::Annihilator = tok {
+                            self.consume();
+                            break;
+                        }
+                        let raw_row = self.collect_raw_line_content();
+                        if let Some(lattice_row) = self.parse_lattice_row(&raw_row) {
+                            rows.push(lattice_row);
                         }
                     }
-                    Flavor::Graphic => {
-                        let raw_line = self.collect_raw_line_content();
-                        let mut parts = raw_line.split_whitespace();
-                        let path = parts.next()?.to_string();
-                        let caption = if parts.clone().count() > 0 {
-                            Some(parts.collect::<Vec<&str>>().join(" "))
-                        } else {
-                            None
-                        };
-                        Some(BlockNode::Image { path, caption })
-                    }
-                    Flavor::Lattice if count == 1 => {
-                        self.collect_raw_line_content();
-                        let mut rows = Vec::new();
+                    return Some(BlockNode::Lattice(rows));
+                }
+                Flavor::Strange => {
+                    self.consume();
+                    let raw_line = self.collect_raw_line_content();
+                    let modifier = raw_line.trim().to_string();
+                    let is_math = modifier == "math";
 
+                    let mut lines = Vec::new();
+
+                    while self.peek().is_some() {
+                        let next_line = self.collect_raw_line_content();
+                        let trimmed = next_line.trim();
+
+                        if trimmed == ".." || trimmed.starts_with("..") {
+                            break;
+                        } else if trimmed == "\\.." || trimmed.starts_with("\\..") {
+                            let unescaped = next_line.replacen("\\..", "..", 1);
+                            lines.push(unescaped);
+                        } else {
+                            lines.push(next_line);
+                        }
+                    }
+
+                    return if is_math {
+                        Some(BlockNode::MathBlock(lines.join("\n")))
+                    } else {
+                        let language = if modifier.is_empty() {
+                            None
+                        } else {
+                            Some(modifier)
+                        };
+                        Some(BlockNode::CodeBlock {
+                            language,
+                            code: lines.join("\n"),
+                        })
+                    };
+                }
+                Flavor::Bottom if count == 1 => {
+                    self.consume();
+                    let raw_line = self.collect_raw_line_content();
+
+                    return if self.evaluate_condition(&raw_line) {
+                        let mut inner_blocks = Vec::new();
                         while let Some(tok) = self.peek() {
                             if let Token::Annihilator = tok {
                                 self.consume();
                                 break;
                             }
-                            let raw_row = self.collect_raw_line_content();
-                            if let Some(lattice_row) = self.parse_lattice_row(&raw_row) {
-                                rows.push(lattice_row);
+                            if let Some(block) = self.parse_block() {
+                                inner_blocks.push(block);
                             }
                         }
-                        Some(BlockNode::Lattice(rows))
-                    }
-                    Flavor::Strange => {
-                        let raw_line = self.collect_raw_line_content();
-                        let modifier = raw_line.trim().to_string();
-                        let is_math = modifier == "math";
-
-                        let mut lines = Vec::new();
-
-                        while self.peek().is_some() {
-                            let next_line = self.collect_raw_line_content();
-                            let trimmed = next_line.trim();
-
-                            if trimmed == ".." || trimmed.starts_with("..") {
-                                break;
-                            } else if trimmed == "\\.." || trimmed.starts_with("\\..") {
-                                let unescaped = next_line.replacen("\\..", "..", 1);
-                                lines.push(unescaped);
-                            } else {
-                                lines.push(next_line);
-                            }
-                        }
-
-                        if is_math {
-                            Some(BlockNode::MathBlock(lines.join("\n")))
-                        } else {
-                            let language = if modifier.is_empty() {
-                                None
-                            } else {
-                                Some(modifier)
-                            };
-                            Some(BlockNode::CodeBlock {
-                                language,
-                                code: lines.join("\n"),
-                            })
-                        }
-                    }
-                    Flavor::Bottom if count == 1 => {
-                        let raw_line = self.collect_raw_line_content();
-
-                        if self.evaluate_condition(&raw_line) {
-                            let mut inner_blocks = Vec::new();
-                            while let Some(tok) = self.peek() {
-                                if let Token::Annihilator = tok {
-                                    self.consume();
-                                    break;
-                                }
-                                if let Some(block) = self.parse_block() {
-                                    inner_blocks.push(block);
-                                }
-                            }
-                            Some(BlockNode::Conditional(inner_blocks))
-                        } else {
-                            // Safe skipping algorithm protecting nested block structures
-                            let mut depth = 1;
-                            while depth > 0 {
-                                if let Some(tok) = self.peek() {
-                                    match tok {
-                                        Token::Annihilator => {
-                                            self.consume();
-                                            depth -= 1;
-                                        }
-                                        Token::Quark { flavor, count }
-                                            if *count == 1
-                                                && (*flavor == Flavor::Lattice
-                                                    || *flavor == Flavor::Strange
-                                                    || *flavor == Flavor::Bottom) =>
-                                        {
-                                            self.collect_raw_line_content();
-                                            depth += 1;
-                                        }
-                                        _ => {
-                                            self.collect_raw_line_content();
-                                        }
+                        Some(BlockNode::Conditional(inner_blocks))
+                    } else {
+                        // Safe skipping algorithm protecting nested block structures
+                        let mut depth = 1;
+                        while depth > 0 {
+                            if let Some(tok) = self.peek() {
+                                match tok {
+                                    Token::Annihilator => {
+                                        self.consume();
+                                        depth -= 1;
                                     }
-                                } else {
-                                    break;
+                                    Token::Quark { flavor, count }
+                                        if *count == 1
+                                            && (*flavor == Flavor::Lattice
+                                                || *flavor == Flavor::Strange
+                                                || *flavor == Flavor::Bottom) =>
+                                    {
+                                        self.collect_raw_line_content();
+                                        depth += 1;
+                                    }
+                                    _ => {
+                                        self.collect_raw_line_content();
+                                    }
                                 }
+                            } else {
+                                break;
                             }
-                            None
                         }
-                    }
-                    _ => {
-                        let content = self.parse_inline_until_line_end();
-                        Some(BlockNode::Paragraph(content))
-                    }
+                        None
+                    };
                 }
+                // Any other flavor (Charm, Muon, Down, ...) is itself inline
+                // content, e.g. a paragraph that opens with `.m bold text..`.
+                // Don't consume it here — parse_inline_until_line_end needs
+                // to see it to wrap it in the right InlineNode::Formatted.
+                _ => {}
             }
-            _ => {
-                let content = self.parse_inline_until_line_end();
-                if content.is_empty() {
-                    None
-                } else {
-                    Some(BlockNode::Paragraph(content))
-                }
-            }
+        }
+
+        let content = self.parse_inline_until_line_end();
+        if content.is_empty() {
+            None
+        } else {
+            Some(BlockNode::Paragraph(content))
         }
     }
 
@@ -324,6 +327,7 @@ impl<'a> Parser<'a> {
                         Flavor::Neutrino => 'n',
                         Flavor::Electron => 'e',
                         Flavor::Lattice => 'l',
+                        Flavor::Muon => 'm',
                     };
                     buffer.push('.');
                     for _ in 0..*count {
