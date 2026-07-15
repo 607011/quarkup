@@ -41,12 +41,10 @@ const DEFAULT_TEMPLATE: &str = r#"<!DOCTYPE html>
         }
         code {
             font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
-            font-size: 85%;
         }
         .quarkup-math-block {
             padding: 1rem 0;
         }
-        /* Style for the advanced tables (Lattices) */
         table.quarkup-lattice {
             width: 100%;
             border-collapse: collapse;
@@ -59,18 +57,18 @@ const DEFAULT_TEMPLATE: &str = r#"<!DOCTYPE html>
             text-align: left;
         }
         table.quarkup-lattice thead th {
-            background-color: #8fb8cf;
+            background-color: #2f5971;
             font-weight: 600;
+            color: white;
         }
         table.quarkup-lattice tfoot td {
-            background-color: #8fb8cf;
-            font-style: italic;
+            background-color: #2f5971;
+            color: white;
             border-top: 2px double #e1e4e8;
         }
         table.quarkup-lattice tr.section-row td {
-            background-color: #ebf8ff;
+            background-color: #80b1cd;
             font-weight: bold;
-            color: #2b6cb0;
             text-align: center;
         }
     </style>
@@ -133,12 +131,12 @@ impl HtmlRenderer {
         }
 
         self.template
-            .replace("{{title}}", &title)
-            .replace("{{author}}", &author)
-            .replace("{{lang}}", &lang)
-            .replace("{{description}}", &description)
-            .replace("{{keywords}}", &keywords)
-            .replace("{{copyright}}", &copyright)
+            .replace("{{title}}", &html_escape(&title))
+            .replace("{{author}}", &html_escape(&author))
+            .replace("{{lang}}", &html_escape(&lang))
+            .replace("{{description}}", &html_escape(&description))
+            .replace("{{keywords}}", &html_escape(&keywords))
+            .replace("{{copyright}}", &html_escape(&copyright))
             .replace("{{content}}", &content_html)
     }
 
@@ -156,7 +154,10 @@ impl HtmlRenderer {
                     match get_image_data_url(path) {
                         Ok(data_url) => data_url,
                         Err(e) => {
-                            eprintln!("Warning: Could not embed image '{}': {}", path, e);
+                            crate::warn_log(&format!(
+                                "Warning: Could not embed image '{}': {}",
+                                path, e
+                            ));
                             path.clone()
                         }
                     }
@@ -164,13 +165,16 @@ impl HtmlRenderer {
                     path.clone()
                 };
 
+                let escaped_src = html_escape(&resolved_src);
+
                 if let Some(cap) = caption {
+                    let escaped_cap = html_escape(cap);
                     format!(
                         "<figure><img src=\"{}\" alt=\"{}\"><figcaption>{}</figcaption></figure>",
-                        resolved_src, cap, cap
+                        escaped_src, escaped_cap, escaped_cap
                     )
                 } else {
-                    format!("<img src=\"{}\" alt=\"\">", resolved_src)
+                    format!("<img src=\"{}\" alt=\"\">", escaped_src)
                 }
             }
             BlockNode::CodeBlock { language, code } => {
@@ -234,15 +238,13 @@ impl HtmlRenderer {
             }
             let mut col = 0;
             while col < row.cells.len() {
-                if row.cells[col].is_colspan_marker {
-                    if col > 0 {
-                        let mut left_col = col - 1;
-                        while left_col > 0 && row.cells[left_col].is_merged {
-                            left_col -= 1;
-                        }
-                        row.cells[left_col].colspan += 1;
-                        row.cells[col].is_merged = true;
+                if row.cells[col].is_colspan_marker && col > 0 {
+                    let mut left_col = col - 1;
+                    while left_col > 0 && row.cells[left_col].is_merged {
+                        left_col -= 1;
                     }
+                    row.cells[left_col].colspan += 1;
+                    row.cells[col].is_merged = true;
                 }
                 col += 1;
             }
@@ -255,26 +257,24 @@ impl HtmlRenderer {
             }
             let num_cells = active_rows[row_idx].cells.len();
             for col_idx in 0..num_cells {
-                if active_rows[row_idx].cells[col_idx].is_rowspan_marker {
-                    if row_idx > 0 {
-                        let mut top_row = row_idx - 1;
-                        while top_row > 0 && active_rows[top_row].row_type == RowType::Section {
-                            top_row -= 1;
+                if active_rows[row_idx].cells[col_idx].is_rowspan_marker && row_idx > 0 {
+                    let mut top_row = row_idx - 1;
+                    while top_row > 0 && active_rows[top_row].row_type == RowType::Section {
+                        top_row -= 1;
+                    }
+                    // CRITICAL FIX: Guard against uneven column counts safely
+                    if col_idx < active_rows[top_row].cells.len() {
+                        let mut target_row = top_row;
+                        while target_row > 0
+                            && col_idx < active_rows[target_row].cells.len()
+                            && active_rows[target_row].cells[col_idx].is_merged
+                            && !active_rows[target_row].cells[col_idx].is_colspan_marker
+                        {
+                            target_row -= 1;
                         }
-                        // CRITICAL FIX: Guard against uneven column counts safely
-                        if col_idx < active_rows[top_row].cells.len() {
-                            let mut target_row = top_row;
-                            while target_row > 0
-                                && col_idx < active_rows[target_row].cells.len()
-                                && active_rows[target_row].cells[col_idx].is_merged
-                                && !active_rows[target_row].cells[col_idx].is_colspan_marker
-                            {
-                                target_row -= 1;
-                            }
-                            if col_idx < active_rows[target_row].cells.len() {
-                                active_rows[target_row].cells[col_idx].rowspan += 1;
-                                active_rows[row_idx].cells[col_idx].is_merged = true;
-                            }
+                        if col_idx < active_rows[target_row].cells.len() {
+                            active_rows[target_row].cells[col_idx].rowspan += 1;
+                            active_rows[row_idx].cells[col_idx].is_merged = true;
                         }
                     }
                 }
@@ -407,7 +407,7 @@ impl HtmlRenderer {
             }
             InlineNode::Link { url, text } => {
                 let rendered_text = self.render_inline_list(text);
-                format!("<a href=\"{}\">{}</a>", url, rendered_text)
+                format!("<a href=\"{}\">{}</a>", html_escape(url), rendered_text)
             }
             InlineNode::Formatted { flavor, content } => {
                 let rendered_content = self.render_inline_list(content);
@@ -428,6 +428,22 @@ impl HtmlRenderer {
     }
 }
 
+// mathjax-svg-rs renders LaTeX by spawning an OS thread, which
+// wasm32-unknown-unknown cannot support (it traps the whole wasm instance).
+// The wasm build instead emits a placeholder holding the raw LaTeX source;
+// web/index.html finds `.quarkup-math-tex` elements and typesets them
+// client-side with KaTeX (a pure-JS renderer, no threads required) once the
+// page has loaded.
+#[cfg(target_arch = "wasm32")]
+fn compile_latex_to_svg(latex: &str, is_block: bool) -> String {
+    let escaped = html_escape(latex);
+    format!(
+        "<span class=\"quarkup-math-tex\" data-display=\"{}\" data-latex=\"{}\">{}</span>",
+        is_block, escaped, escaped
+    )
+}
+
+#[cfg(not(target_arch = "wasm32"))]
 fn compile_latex_to_svg(latex: &str, is_block: bool) -> String {
     let options = mathjax_svg_rs::Options::default();
 
@@ -477,4 +493,22 @@ fn html_escape(input: &str) -> String {
         }
     }
     escaped
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn html_escape_covers_all_five_special_characters() {
+        assert_eq!(
+            html_escape(r#"<a href="x">Tom & Jerry's "quote"</a>"#),
+            "&lt;a href=&quot;x&quot;&gt;Tom &amp; Jerry&#x27;s &quot;quote&quot;&lt;/a&gt;"
+        );
+    }
+
+    #[test]
+    fn html_escape_leaves_plain_text_untouched() {
+        assert_eq!(html_escape("plain text 123"), "plain text 123");
+    }
 }

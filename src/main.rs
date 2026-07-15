@@ -1,13 +1,7 @@
-mod ast;
-mod html;
-mod lexer;
-mod parser;
-
 use clap::Parser as ClapParser;
-use html::HtmlRenderer;
-use lexer::Lexer;
-use parser::Parser;
-use std::collections::HashMap;
+use quarkup::html::HtmlRenderer;
+use quarkup::lexer::Lexer;
+use quarkup::parser::Parser;
 use std::fs;
 use std::io::{self, Read};
 
@@ -58,17 +52,7 @@ struct Args {
 fn main() -> io::Result<()> {
     let args = Args::parse();
 
-    // Map the incoming defines into a HashMap
-    let mut defines_map = HashMap::new();
-    for define in &args.defines {
-        if let Some(pos) = define.find('=') {
-            let (key, value) = define.split_at(pos);
-            defines_map.insert(key.trim().to_string(), value[1..].trim().to_string());
-        } else {
-            // If no '=' is specified, treat it as a true flag
-            defines_map.insert(define.trim().to_string(), "true".to_string());
-        }
-    }
+    let defines_map = quarkup::parse_defines(&args.defines);
 
     if args.verbose {
         eprintln!("[Info] Starting Quarkup compiler...");

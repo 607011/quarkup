@@ -154,6 +154,30 @@ This is how the [sample document](example/demo.qu) looks like in a web browser:
 
 ---
 
+## 🌐 Standalone Web App (WASM)
+
+The compiler also runs entirely client-side in the browser via WebAssembly — no server, no data leaves the machine. The frontend lives in [`web/index.html`](web/index.html) and talks to a `quarkup` crate built with `crate-type = ["cdylib", "rlib"]` (see [`Cargo.toml`](Cargo.toml) and [`src/wasm.rs`](src/wasm.rs)).
+
+Build the wasm module and JS bindings:
+
+```bash
+./web/build.sh
+```
+
+This requires the `wasm32-unknown-unknown` target (`rustup target add wasm32-unknown-unknown`) and a matching `wasm-bindgen-cli` version (`cargo install wasm-bindgen-cli --version <version-of-wasm-bindgen-in-Cargo.toml>`).
+
+Note that LaTeX rendering (`.s math` / inline `.s math ...`) works differently in the browser: `mathjax-svg-rs` renders by spawning an OS thread, which `wasm32-unknown-unknown` cannot support, so the wasm target compiles without that dependency and instead emits a placeholder holding the raw LaTeX source. `web/index.html` typesets those placeholders client-side with the vendored [KaTeX](web/vendor/katex/) (MIT-licensed, bundled locally under `web/vendor/katex/`) once the preview loads. The CLI is unaffected and keeps using `mathjax-svg-rs` directly.
+
+Then serve the `web/` directory with any static HTTP server (ES modules require `http://`, not `file://`):
+
+```bash
+python3 -m http.server -d web 8080
+```
+
+and open `http://localhost:8080`.
+
+---
+
 ## 🪐 Join the Subatomic Universe
 
 Quarkup is currently in its pre-alpha orbital state. Contributions to the parser or link-refinement mechanics are highly welcome!

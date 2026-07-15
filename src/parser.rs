@@ -220,19 +220,15 @@ impl<'a> Parser<'a> {
             return None;
         }
 
-        let mut row_type = RowType::Body;
-        let mut content_part = trimmed;
-
-        if trimmed.starts_with("h:") {
-            row_type = RowType::Header;
-            content_part = &trimmed[2..];
-        } else if trimmed.starts_with("f:") {
-            row_type = RowType::Footer;
-            content_part = &trimmed[2..];
-        } else if trimmed.starts_with("s:") {
-            row_type = RowType::Section;
-            content_part = &trimmed[2..];
-        }
+        let (row_type, content_part) = if let Some(rest) = trimmed.strip_prefix("h:") {
+            (RowType::Header, rest)
+        } else if let Some(rest) = trimmed.strip_prefix("f:") {
+            (RowType::Footer, rest)
+        } else if let Some(rest) = trimmed.strip_prefix("s:") {
+            (RowType::Section, rest)
+        } else {
+            (RowType::Body, trimmed)
+        };
 
         let raw_cells: Vec<&str> = content_part.split(';').collect();
         let mut cells = Vec::new();
@@ -261,13 +257,13 @@ impl<'a> Parser<'a> {
 
     fn parse_list_block(&mut self) -> Option<BlockNode> {
         let first_tok = self.peek()?;
-        let ordered = match first_tok {
+        let ordered = matches!(
+            first_tok,
             Token::Quark {
                 flavor: Flavor::Electron,
                 ..
-            } => true,
-            _ => false,
-        };
+            }
+        );
 
         let mut items = Vec::new();
 
@@ -369,9 +365,8 @@ impl<'a> Parser<'a> {
                     if flavor == Flavor::Strange {
                         let inner = self.parse_inline_until_annihilator();
                         let raw_text = self.nodes_to_string(&inner);
-                        if raw_text.starts_with("math ") {
-                            let formula = raw_text["math ".len()..].to_string();
-                            nodes.push(InlineNode::InlineMath(formula));
+                        if let Some(formula) = raw_text.strip_prefix("math ") {
+                            nodes.push(InlineNode::InlineMath(formula.to_string()));
                         } else {
                             nodes.push(InlineNode::Formatted {
                                 flavor,
@@ -478,9 +473,8 @@ impl<'a> Parser<'a> {
                     if flavor == Flavor::Strange {
                         let inner = self.parse_inline_until_annihilator();
                         let raw_text = self.nodes_to_string(&inner);
-                        if raw_text.starts_with("math ") {
-                            let formula = raw_text["math ".len()..].to_string();
-                            nodes.push(InlineNode::InlineMath(formula));
+                        if let Some(formula) = raw_text.strip_prefix("math ") {
+                            nodes.push(InlineNode::InlineMath(formula.to_string()));
                         } else {
                             nodes.push(InlineNode::Formatted {
                                 flavor,

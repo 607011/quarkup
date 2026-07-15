@@ -87,13 +87,12 @@ impl<'a> Lexer<'a> {
             if first_c == '#' {
                 self.consume_until_newline();
                 return true;
-            } else if first_c == '/' {
-                if let Some((_, second_c)) = temp_chars.next() {
-                    if second_c == '/' {
-                        self.consume_until_newline();
-                        return true;
-                    }
-                }
+            } else if first_c == '/'
+                && let Some((_, second_c)) = temp_chars.next()
+                && second_c == '/'
+            {
+                self.consume_until_newline();
+                return true;
             }
         }
         false
@@ -129,16 +128,9 @@ impl<'a> Iterator for Lexer<'a> {
             self.at_line_start = true;
         }
 
-        let (start_idx, c) = match self.bump() {
-            Some(pair) => pair,
-            None => return None,
-        };
+        let (start_idx, c) = self.bump()?;
 
-        if c == '\n' || c == '\r' {
-            self.at_line_start = true;
-        } else {
-            self.at_line_start = false;
-        }
+        self.at_line_start = c == '\n' || c == '\r';
 
         match c {
             '\n' => Some(Token::LineBreak),
@@ -161,9 +153,9 @@ impl<'a> Iterator for Lexer<'a> {
                     if let Some(flavor) = Flavor::from_char(next_c) {
                         let mut count = 0;
                         let mut valid_quark = true;
-                        let mut temp_chars = self.chars.clone();
+                        let temp_chars = self.chars.clone();
 
-                        while let Some((_, temp_c)) = temp_chars.next() {
+                        for (_, temp_c) in temp_chars {
                             if temp_c == next_c {
                                 count += 1;
                             } else if temp_c == ' ' || temp_c == '\n' || temp_c == '\r' {
@@ -178,10 +170,10 @@ impl<'a> Iterator for Lexer<'a> {
                             for _ in 0..count {
                                 self.bump();
                             }
-                            if let Some(&(_, term_c)) = self.chars.peek() {
-                                if term_c == ' ' {
-                                    self.bump();
-                                }
+                            if let Some(&(_, term_c)) = self.chars.peek()
+                                && term_c == ' '
+                            {
+                                self.bump();
                             }
                             return Some(Token::Quark { flavor, count });
                         }
@@ -207,5 +199,39 @@ impl<'a> Iterator for Lexer<'a> {
                 Some(Token::Text(&self.source[start_idx..end_idx]))
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn recognizes_a_quark_by_dot_letters_space() {
+        let mut lexer = Lexer::new(".uu Heading");
+        assert_eq!(
+            lexer.next(),
+            Some(Token::Quark {
+                flavor: Flavor::Up,
+                count: 2
+            })
+        );
+        assert_eq!(lexer.next(), Some(Token::Text("Heading")));
+        assert_eq!(lexer.next(), None);
+    }
+
+    #[test]
+    fn recognizes_the_annihilator() {
+        let mut lexer = Lexer::new("..");
+        assert_eq!(lexer.next(), Some(Token::Annihilator));
+        assert_eq!(lexer.next(), None);
+    }
+
+    #[test]
+    fn skips_hash_and_slash_comment_lines() {
+        let mut lexer = Lexer::new("# a comment\nkept");
+        // the comment line and its trailing newline are swallowed entirely
+        assert_eq!(lexer.next(), Some(Token::Text("kept")));
+        assert_eq!(lexer.next(), None);
     }
 }

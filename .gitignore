@@ -1,4 +1,4 @@
-Cargo.lock
 .DS_Store
 target/*
 demo.html
+web/pkg/
