@@ -69,7 +69,6 @@ const DEFAULT_TEMPLATE: &str = r#"<!DOCTYPE html>
         table.quarkup-lattice tr.section-row td {
             background-color: #80b1cd;
             font-weight: bold;
-            text-align: center;
         }
     </style>
 </head>
@@ -210,7 +209,7 @@ impl HtmlRenderer {
             BlockNode::MathBlock(latex) => {
                 let svg = compile_latex_to_svg(latex, true);
                 format!(
-                    "<div class=\"quarkup-math-block\" style=\"text-align: center; margin: 1.5em 0;\">{}</div>",
+                    "<div class=\"quarkup-math-block\" style=\"margin: 1.5em 0;\">{}</div>",
                     svg
                 )
             }

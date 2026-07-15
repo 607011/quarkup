@@ -59,15 +59,15 @@ Complex tables are also possible. They can span columns and rows, and have multi
 
 .s text
 .l
-h: Product     ; Properties ; > ; Mass
-h:             ; Charge         ; Spin ; 
+h: Product     ; Properties ;   >   ; Mass
+h:             ; Charge        ; Spin  ;
 s: Leptons
-Electron       ; −1            ; 1/2  ; 0.511 MeV
-Neutrino       ; 0             ; 1/2  ; < 0.12 eV
+Electron       ; .> −1            ; .> 1/2   ; .> 0.511 MeV
+Neutrino       ; .> 0             ; .> 1/2   ; .> < 0.12 eV
 s: Quarks
-Up quark       ; +2/3          ; 1/2  ; 2.2 MeV
-Down quark     ; −1/3          ; 1/2  ; 4.7 MeV
-f: Total mass  ;  > ;  > ; ~ 7.5 MeV
+Up quark       ; .> +2/3          ; .> 1/2   ; .> 2.2 MeV
+Down quark     ; .> −1/3          ; .> 1/2   ; .> 4.7 MeV
+.m Total mass.. ;   >             ;   >      ; .> .m ~ 7.5 MeV..
 \..
 ..
 
@@ -75,14 +75,14 @@ becomes
 
 .l
 h: Product     ; Properties ;   >   ; Mass
-h:             ; Charge        ; Spin  ; 
+h:             ; Charge        ; Spin  ;
 s: Leptons
-Electron       ; −1            ; 1/2   ; 0.511 MeV
-Neutrino       ; 0             ; 1/2   ; < 0.12 eV
+Electron       ; .> −1            ; .> 1/2   ; .> 0.511 MeV
+Neutrino       ; .> 0             ; .> 1/2   ; .> < 0.12 eV
 s: Quarks
-Up quark       ; +2/3          ; 1/2   ; 2.2 MeV
-Down quark     ; −1/3          ; 1/2   ; 4.7 MeV
-f: Total mass  ;   >   ;   >   ; ~ 7.5 MeV
+Up quark       ; .> +2/3          ; .> 1/2   ; .> 2.2 MeV
+Down quark     ; .> −1/3          ; .> 1/2   ; .> 4.7 MeV
+.m Total mass.. ;   >             ;   >      ; .> .m ~ 7.5 MeV..
 ..
 
 This concludes our quick mathematical and physical tour of the Quarkup universe.
