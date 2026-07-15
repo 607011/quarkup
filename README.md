@@ -19,6 +19,7 @@ Formatting behaviors are controlled by a minimal set of flavor letters:
 * **Muon (`m`):** A heavier cousin of the electron — adds visual mass (Bold / Strong).
 * **Top (`t`):** Global metadata properties defined at the top of a document.
 * **Graphic (`g`):** Embedded visual media (Images / Figures).
+* **Lattice (`l`):** A crystalline grid structure — as a block it builds Tables, as an inline particle it forms Links.
 
 ### 2. The Lepton Family (Lists & Structural Flows)
 Lists are powered by light, fundamental leptons:
@@ -65,6 +66,44 @@ Sequential lepton blocks of the same type are automatically grouped together. St
 * `.t title My First Quarkup Document`
 * `.g terrace.jpg A beautiful view from the terrace`
 
+#### Tables (Lattices)
+A `.l` block opens a table; it closes on a solitary Annihilator (`..`) on its own line. Each line inside is one row, with cells separated by `;`.
+
+Rows can carry an optional type prefix:
+* `h:` — Header row (wrapped in `<thead>`)
+* `f:` — Footer row (wrapped in `<tfoot>`)
+* `s:` — Section row (a single centered cell spanning the full table width, e.g. as a group divider)
+* *(no prefix)* — Regular body row
+
+Within Header, Body, and Footer rows, a cell containing only `>` merges into the cell to its left (colspan), and a cell containing only `_` merges into the cell above it (rowspan).
+
+Cell content can carry an alignment marker as a prefix — left is the default and needs no marker:
+* `.> ` — right-aligned
+* `.^ ` — centered
+
+```text
+.l
+h: Product ; Qty  ; Price
+Widget     ; .^ 3 ; .> 9.99
+Gadget     ; .^ 1 ; .> 199.00
+f: Total   ; >     ; .> 208.99
+..
+```
+
+renders a table with a header row, two body rows with centered quantities and right-aligned prices, and a footer row whose first two columns merge into a single "Total" cell.
+
+#### Conditional Rendering (Bottom)
+A `.b condition` block includes its enclosed blocks only when `condition` matches the active defines, then closes on a solitary Annihilator (`..`). Defines are supplied via the CLI's repeatable `-d KEY=VALUE` flag (bare `-d KEY` counts as `KEY=true`), or via the "Defines" field in the [web playground](web/index.html).
+
+```text
+.b target=web
+.u Web-only heading
+This paragraph only appears in the browser build.
+..
+```
+
+Compiled with `-d target=web`, the heading and paragraph are included; compiled without it, the whole block — and its condition line — disappear without a trace. Prefix the condition with `!` to negate it, e.g. `.b !target=web` renders only when `target` is *not* set to `web`.
+
 ---
 
 ### 2. Inline Elements (The Micro State)
@@ -77,6 +116,7 @@ To maintain perfect legibility, the command particle "clings" to the left word b
 * **Inline Code (Strange):** `Run the .s cargo build.. command.`
 * **Superscript & Subscript (Up/Down):** * `a.u 2.. + b.u 2.. = c.u 2..`
   * `H.d 2..O is essential for life.`
+* **Conditional (Bottom):** `This feature is available .b target=web|only in your browser...` keeps the phrase when compiled with `-d target=web` and drops it (surrounding text and punctuation stay put) otherwise. Negate with `!`, same as the block form. Note the `condition|text` form only triggers when `.b` is *not* the first token on the line — a line-opening `.b` is always parsed as the block form described above.
 
 ---
 

@@ -1,4 +1,6 @@
-use crate::ast::{BlockNode, Document, InlineNode, LatticeCell, LatticeRow, ListItem, RowType};
+use crate::ast::{
+    BlockNode, CellAlign, Document, InlineNode, LatticeCell, LatticeRow, ListItem, RowType,
+};
 use crate::lexer::{Flavor, Lexer, Token};
 use std::collections::HashMap;
 
@@ -241,7 +243,17 @@ impl<'a> Parser<'a> {
             let is_colspan_marker = cell_trimmed == ">";
             let is_rowspan_marker = cell_trimmed == "_";
 
-            let cell_lexer = Lexer::new(raw_cell);
+            // A leading ".^ " / ".> " marks cell alignment; stripped before
+            // the cell's own content is lexed so it never shows up as text.
+            let (align, cell_source) = if let Some(rest) = cell_trimmed.strip_prefix(".^ ") {
+                (CellAlign::Center, rest)
+            } else if let Some(rest) = cell_trimmed.strip_prefix(".> ") {
+                (CellAlign::Right, rest)
+            } else {
+                (CellAlign::Left, raw_cell)
+            };
+
+            let cell_lexer = Lexer::new(cell_source);
             let mut cell_parser = Parser::new(cell_lexer, HashMap::new());
             let content = cell_parser.parse_inline_until_line_end();
 
@@ -252,6 +264,7 @@ impl<'a> Parser<'a> {
                 is_merged: false,
                 is_colspan_marker,
                 is_rowspan_marker,
+                align,
             });
         }
 

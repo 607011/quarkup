@@ -28,6 +28,13 @@ pub enum RowType {
     Section,
 }
 
+#[derive(Debug, PartialEq, Clone, Copy)]
+pub enum CellAlign {
+    Left,
+    Center,
+    Right,
+}
+
 #[derive(Debug, PartialEq, Clone)]
 pub struct LatticeCell {
     pub content: Vec<InlineNode>,
@@ -36,6 +43,7 @@ pub struct LatticeCell {
     pub is_merged: bool,
     pub is_colspan_marker: bool,
     pub is_rowspan_marker: bool,
+    pub align: CellAlign,
 }
 
 #[derive(Debug, PartialEq, Clone)]

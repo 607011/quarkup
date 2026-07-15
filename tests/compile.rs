@@ -129,6 +129,26 @@ fn lattice_supports_colspan_and_rowspan_markers() {
 }
 
 #[test]
+fn lattice_cell_alignment_markers() {
+    let src = ".l\nLeft;.> Right;.^ Center\n..\n";
+    let html = compile(src);
+    assert!(html.contains("<td >Left</td>"));
+    assert!(html.contains("<td style=\"text-align: right;\" >Right</td>"));
+    assert!(html.contains("<td style=\"text-align: center;\" >Center</td>"));
+}
+
+#[test]
+fn lattice_alignment_marker_does_not_collide_with_colspan_marker() {
+    // Regression test: the colspan marker is an exact-match on a lone ">",
+    // while the right-align marker is the longer ".> " prefix — they must
+    // not be confused with each other.
+    let src = ".l\nA ; >\nB ; .> right\n..\n";
+    let html = compile(src);
+    assert!(html.contains("colspan=\"2\""));
+    assert!(html.contains("<td style=\"text-align: right;\" >right</td>"));
+}
+
+#[test]
 fn lattice_header_and_footer_rows_are_wrapped() {
     let src = ".l\nh: A ; B\nbody1 ; body2\nf: foot1 ; foot2\n..\n";
     let html = compile(src);

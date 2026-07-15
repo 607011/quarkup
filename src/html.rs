@@ -1,4 +1,4 @@
-use crate::ast::{BlockNode, Document, InlineNode, LatticeRow, ListItem, RowType};
+use crate::ast::{BlockNode, CellAlign, Document, InlineNode, LatticeRow, ListItem, RowType};
 use crate::lexer::Flavor;
 use base64::prelude::*;
 use std::fs;
@@ -338,6 +338,11 @@ impl HtmlRenderer {
                     }
                     if cell.rowspan > 1 {
                         attrs.push_str(&format!(" rowspan=\"{}\"", cell.rowspan));
+                    }
+                    match cell.align {
+                        CellAlign::Center => attrs.push_str(" style=\"text-align: center;\""),
+                        CellAlign::Right => attrs.push_str(" style=\"text-align: right;\""),
+                        CellAlign::Left => {}
                     }
 
                     let content = self.render_inline_list(&cell.content);
